@@ -263,6 +263,11 @@ set(SOURCE_FILES
         src/elasticity/PostProcessDDM_3d.cpp
         src/elasticity/2d/FullMatrixAssembly2D.cpp
         src/elasticity/2d/FullMatrixAssembly2D.h
+        src/elasticity/2d/elliptic_integral.cpp
+        src/elasticity/2d/elliptic_integral.hpp
+        src/elasticity/2d/ElasticAxi3DP0_element.h
+        src/elasticity/2d/ElasticAxi3DP0_element.cc
+        src/elasticity/2d/ElasticHMatrixAxi3DP0.h
         # 3D source code
         src/hmat/linearAlgebra/factorization/lowRankApproximation.cpp
         src/core/Mesh3D.cpp src/core/Mesh3D.h
