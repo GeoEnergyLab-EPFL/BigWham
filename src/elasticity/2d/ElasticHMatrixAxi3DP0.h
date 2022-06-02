@@ -7,11 +7,12 @@
 #include <hmat/arrayFunctor/MatrixGenerator.h>
 #include <src/core/Mesh2D.h>
 #include <src/core/ElasticProperties.h>
+#include <src/elasticity/2d/ElasticAxi3DP0_element.h>
 
 namespace bie {
 
     template <typename T>
-    class ElasticHMatrixAxiSym3DP0 : public bie::MatrixGenerator<T> {
+    class ElasticHMatrixAxi3DP0 : public bie::MatrixGenerator<T> {
     private:
         il::Array2D<double> point_;
 //        double ker_opts_;
@@ -21,9 +22,9 @@ namespace bie {
         bie::ElasticProperties elas_;
 
     public:
-        ElasticHMatrixAxiSym3DP0(const il::Array2D<double> &point,
-                           const il::Array<il::int_t> &permutation, bie::Mesh &mesh,
-                           bie::ElasticProperties &elas);
+        ElasticHMatrixAxi3DP0(const il::Array2D<double> &point,
+                              const il::Array<il::int_t> &permutation, bie::Mesh &mesh,
+                              bie::ElasticProperties &elas);
         il::int_t size(il::int_t d) const override;
         il::int_t blockSize() const override;
         il::int_t sizeAsBlocks(il::int_t d) const override;
@@ -32,7 +33,7 @@ namespace bie {
     };
 
     template <typename T>
-    ElasticHMatrixAxiSym3DP0<T>::ElasticHMatrixAxiSym3DP0(
+    ElasticHMatrixAxi3DP0<T>::ElasticHMatrixAxi3DP0(
             const il::Array2D<double> &point, const il::Array<il::int_t> &permutation,
             bie::Mesh &mesh, bie::ElasticProperties &elas)
             : point_{point},
@@ -43,27 +44,27 @@ namespace bie {
     };
 
     template <typename T>
-    il::int_t ElasticHMatrixAxiSym3DP0<T>::size(il::int_t d) const {
+    il::int_t ElasticHMatrixAxi3DP0<T>::size(il::int_t d) const {
         IL_EXPECT_MEDIUM(d == 0 || d == 1);
 
         return mesh_.numberDDDofs();
     };
 
     template <typename T>
-    il::int_t ElasticHMatrixAxiSym3DP0<T>::blockSize() const {
+    il::int_t ElasticHMatrixAxi3DP0<T>::blockSize() const {
         return 2;
     }
 
     template <typename T>
-    il::int_t ElasticHMatrixAxiSym3DP0<T>::sizeAsBlocks(il::int_t d) const {
+    il::int_t ElasticHMatrixAxi3DP0<T>::sizeAsBlocks(il::int_t d) const {
         IL_EXPECT_MEDIUM(d == 0 || d == 1);
 
         return (mesh_.numberDDDofs() / 2);
     }
 
     template <typename T>
-    void ElasticHMatrixAxiSym3DP0<T>::set(il::int_t b0, il::int_t b1, il::io_t,
-                                    il::Array2DEdit<T> M) const {
+    void ElasticHMatrixAxi3DP0<T>::set(il::int_t b0, il::int_t b1, il::io_t,
+                                       il::Array2DEdit<T> M) const {
         IL_EXPECT_MEDIUM(M.size(0) % blockSize() == 0);
         IL_EXPECT_MEDIUM(M.size(1) % blockSize() == 0);
         IL_EXPECT_MEDIUM(b0 + M.size(0) / blockSize() <= point_.size(0));
@@ -103,7 +104,7 @@ namespace bie {
                     }
                     bie::SegmentData seg_r = mesh_.getElementData(e_k0);
                     il::int_t const p1 = 1;
-                    stnl = traction_influence_AxiSym3DP0(
+                    stnl = traction_influence_Axi3DP0(
                             seg_s, seg_r, elas_); //, is_l, ir_l
 
                     for (il::int_t j = 0; j < 2; j++) {

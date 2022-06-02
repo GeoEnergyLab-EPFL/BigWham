@@ -2,13 +2,13 @@
 // Created by Alexis Sáez Uribe on 30/05/2022.
 //
 
-#include <elasticity/2d/ElasticAxiSym3DP0_element.h>
+#include <elasticity/2d/ElasticAxi3DP0_element.h>
 #include <src/core/ElasticProperties.h>
 #include <elasticity/2d/elliptic_integral.hpp>
 
 namespace bie {
 
-    il::StaticArray2D<double, 2, 2> traction_influence_AxiSym3DP0(
+    il::StaticArray2D<double, 2, 2> traction_influence_Axi3DP0(
             SegmentData &source_elt, // source element
             SegmentData &receiver_elt, // receiver element
             bie::ElasticProperties const &elas_) { // elastic properties

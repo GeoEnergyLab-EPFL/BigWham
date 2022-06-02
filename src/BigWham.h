@@ -37,6 +37,8 @@
 #include <elasticity/3d/ElasticHMatrix3DT6.h>
 #include <elasticity/3d/ElasticHMatrix3DR0_modes2and3Cartesian.h>
 #include <elasticity/3d/ElasticHMatrix3DT0_modes2and3.h>
+#include <elasticity/2d/ElasticHMatrixAxi3DP0.h>
+
 
 class Bigwhamio {
  private:
@@ -97,7 +99,7 @@ class Bigwhamio {
 
     // if on kernel name - separating 2D and 3D kernels,
     // duplicating code for simplicity
-    if ((kernel_ == "2DP1") || (kernel_ == "S3DP0")) {
+    if ((kernel_ == "2DP1") || (kernel_ == "S3DP0") || (kernel_ == "Axi3DP0")) {
       // step 1 - create the mesh object
       dimension_ = 2;
       dof_dimension_ = 2;
@@ -156,7 +158,7 @@ class Bigwhamio {
       // elastic properties
       std::cout << " properties vector size " << properties.size() << "\n";
 
-      if (kernel_ == "2DP1") {
+      if (kernel_ == "2DP1" || kernel_ == "Axi3DP0") {
         IL_ASSERT(properties.size() == 2);
       } else if (kernel_ == "S3DP0") {
         IL_ASSERT(properties.size() == 3);
@@ -177,8 +179,15 @@ class Bigwhamio {
         const bie::ElasticHMatrix2DP0<double> M{collocationPoints_, permutation_, mesh2d, elas, properties[2]};
         h_.toHmat(M,cluster, collocationPoints_,  eta_,epsilon_aca_);
       }
-    } else if (kernel_ == "3DT6" || kernel_ == "3DR0_displ" ||
-               kernel_ == "3DR0" || kernel_ == "3DT0" || kernel_ == "3DT0_displ" || kernel_ == "3DR0opening" || kernel_ == "3DR0shear" || kernel_ == "3DT0shear") {
+      else if (kernel_ == "Axi3DP0") {
+          std::cout << "Axisymmetric 3D (2D) P0 ring dislocation element  \n";
+          const bie::ElasticHMatrixAxi3DP0<double> M{collocationPoints_, permutation_, mesh2d, elas};
+          h_.toHmat(M,cluster, collocationPoints_,  eta_,epsilon_aca_);
+      }
+    }
+
+    else if (kernel_ == "3DT6" || kernel_ == "3DR0_displ" ||
+             kernel_ == "3DR0" || kernel_ == "3DT0" || kernel_ == "3DT0_displ" || kernel_ == "3DR0opening" || kernel_ == "3DR0shear" || kernel_ == "3DT0shear") {
       // step 1 - create the mesh object
       dimension_ = 3;
       il::int_t nnodes_elts = 0;  // n of nodes per element
@@ -529,7 +538,7 @@ class Bigwhamio {
       nnodes_elts = 3;
     } else if (kernel_ == "3DR0_displ" || kernel_ == "3DR0" || kernel_ =="3DR0opening") {
       nnodes_elts = 4;
-    } else if (kernel_ == "2DP1") {
+    } else if (kernel_ == "2DP1" || kernel_ == "Axi3DP0") {
       nnodes_elts = 2;
     } else if (kernel_ == "S3DP0") {
       nnodes_elts = 3;
@@ -544,7 +553,7 @@ class Bigwhamio {
     int p = -1;
     if (kernel_ == "3DT6") {
       p = 2;
-    } else if (kernel_ == "3DT0") {
+    } else if (kernel_ == "3DT0" || kernel_ == "Axi3DP0") {
       p = 0;
     } else if (kernel_ == "3DR0_displ" || kernel_ == "3DR0" ||  kernel_ == "3DT0_displ" || (kernel_ == "S3DP0") || kernel_ =="3DR0opening" ) {
       p = 0;
