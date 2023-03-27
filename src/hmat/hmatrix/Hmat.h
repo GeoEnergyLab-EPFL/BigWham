@@ -19,11 +19,25 @@
 #endif
 
 #include "core/hierarchical_representation.h"
-#include <hmat/hmatrix/LowRank.h>
-#include <hmat/hmatrix/toHPattern.h>
+#include "hmat/hmatrix/LowRank.h"
+#include "hmat/hmatrix/toHPattern.h"
 
-#include <hmat/compression/adaptiveCrossApproximation.h>
-#include <hmat/arrayFunctor/MatrixGenerator.h>
+#include "hmat/compression/adaptiveCrossApproximation.h"
+#include "hmat/arrayFunctor/MatrixGenerator.h"
+
+#include <omp.h>
+#include <vector>
+#include <cmath>
+#include <numeric>
+#include <string>
+
+#if defined(BIGWHAM_HDF5)
+#include "hdf5.h"
+#endif
+
+// #if defined(HAS_ITT)
+// #include <ittnotify.h>
+// #endif
 
 #include <vector>
 
@@ -86,6 +100,17 @@ class Hmat {
        std::cout << "Hmat object - built " << "\n";
    }
 
+  Hmat(const std::string & filename){
+       // construction directly
+       il::Timer tt;
+       tt.Start();
+       this->readFromFile(filename);
+       tt.Stop();
+       std::cout << "Reading of hmat done in "  << tt.time() <<"\n";std::cout << "Compression ratio - " << this->compressionRatio() <<"\n";
+       std::cout << "Hmat object - built " << "\n";
+   }
+
+
     // Main constructor
     void toHmat(const bie::MatrixGenerator<T>& matrix_gen,const bie::HRepresentation& h_r,const double epsilon_aca){
         pattern_=h_r.pattern_;
@@ -99,57 +124,195 @@ class Hmat {
         std::cout << "Hmat object - built " << "\n";
     }
 
-   // -----------------------------------------------------------------------------
-   void buildFR(const bie::MatrixGenerator<T>& matrix_gen){
-     // construction of the full rank blocks
-  std::cout << " Loop on full blocks construction  \n";
-  std::cout << " N full blocks "<< pattern_.n_FRB << " \n";
+  void writeToFile(const std::string & filename) {
+#if defined(BIGWHAM_HDF5)
+    auto file_id = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+    auto hmat_gid = H5Gcreate(file_id, "/hmat", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
-#pragma omp parallel
-  {
-      std::vector<std::unique_ptr<il::Array2D<T>>> private_full_rank_blocks;
+    auto writeAttribute = [](auto && name, auto && gid, auto && value) {
+      auto aid  = H5Screate(H5S_SCALAR);
+      auto attr = H5Acreate(gid, name, H5T_NATIVE_LLONG, aid, H5P_DEFAULT, H5P_DEFAULT);
+      H5Awrite(attr, H5T_NATIVE_LLONG, &value);
+      H5Aclose(attr);
+      H5Sclose(aid);
+    };
 
-#pragma omp for nowait schedule(static)
-    for (il::int_t i = 0; i < pattern_.n_FRB; i++) {
-      il::int_t i0 = pattern_.FRB_pattern(1, i);
-      il::int_t j0 = pattern_.FRB_pattern(2, i);
-      il::int_t iend = pattern_.FRB_pattern(3, i);
-      il::int_t jend = pattern_.FRB_pattern(4, i);
+    auto writeArray2D = [](auto && name, auto && gid, auto && array) {
+      hsize_t dims[2] = {array.size(0), array.size(1)};
+      auto dataspace_id = H5Screate_simple(2, dims, NULL);
+      auto dataset_id = H5Dcreate(gid, std::string(name).c_str(), H5T_NATIVE_DOUBLE, dataspace_id,
+                                  H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+      H5Dwrite(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, dataspace_id, H5P_DEFAULT, array.data());
+      H5Dclose(dataset_id);
+      H5Sclose(dataspace_id);
+    };
 
-      const il::int_t ni = matrix_gen.blockSize() * (iend - i0);
-      const il::int_t nj = matrix_gen.blockSize() * (jend - j0);
+    writeAttribute("dof_dimension", hmat_gid, dof_dimension_);
+    writeAttribute("m", hmat_gid, size_[0]);
+    writeAttribute("n", hmat_gid, size_[1]);
 
-      std::unique_ptr<il::Array2D<T>> a =std::make_unique<il::Array2D<T>>  (ni, nj);
-      matrix_gen.set(i0, j0, il::io, (*a).Edit());
-      private_full_rank_blocks.push_back(std::move(a));
+    auto pattern_gid = H5Gcreate(hmat_gid, "pattern", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    writeAttribute("n_FRB", pattern_gid, pattern_.n_FRB);
+    writeAttribute("n_LRB", pattern_gid, pattern_.n_LRB);
+    writeArray2D("FRB", pattern_gid, pattern_.FRB_pattern);
+    writeArray2D("LRB", pattern_gid, pattern_.LRB_pattern);
+    H5Gclose(pattern_gid);
+
+    auto frb_gid = H5Gcreate(hmat_gid, "FRB", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    il::int_t i_frb = 0;
+    for(auto && frb : full_rank_blocks_) {
+      writeArray2D("frb_" + std::to_string(i_frb), frb_gid, *frb);
+      ++i_frb;
     }
-#ifdef IL_OPENMP
-#pragma omp for schedule(static) ordered
-    for(int i=0; i<omp_get_num_threads(); i++) {
-#pragma omp ordered
-      full_rank_blocks_.insert(full_rank_blocks_.end(), std::make_move_iterator(private_full_rank_blocks.begin()), std::make_move_iterator(private_full_rank_blocks.end()));
+    H5Gclose(frb_gid);
+
+    auto lrbs_gid = H5Gcreate(hmat_gid, "LRB", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    il::int_t i_lrb = 0;
+    for(auto && lrb : low_rank_blocks_) {
+      std::string group = "lrb_" + std::to_string(i_lrb);
+      auto lrb_gid = H5Gcreate(lrbs_gid, group.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+      writeArray2D("A", lrb_gid, lrb->A);
+      writeArray2D("B", lrb_gid, lrb->B);
+      H5Gclose(lrb_gid);
+      ++i_lrb;
     }
-#else
-    full_rank_blocks_.insert(full_rank_blocks_.end(), std::make_move_iterator(private_full_rank_blocks.begin()), std::make_move_iterator(private_full_rank_blocks.end()));
+    H5Gclose(lrbs_gid);
+    H5Gclose(hmat_gid);
+    H5Fclose(file_id);
 #endif
   }
-       isBuilt_FR_=true;
+
+  void readFromFile(const std::string & filename) {
+#if defined(BIGWHAM_HDF5)
+    auto file_id = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+    auto hmat_gid = H5Gopen(file_id, "/hmat", H5P_DEFAULT);
+
+    auto readAttribute = [](auto && name, auto && gid, auto && value) {
+      auto attr = H5Aopen(gid, name, H5P_DEFAULT);
+      H5Aread(attr, H5T_NATIVE_LLONG, &value);
+      H5Aclose(attr);
+    };
+
+    auto readArray2D = [](auto && name, auto && gid, auto && array) {
+      hsize_t dims[2];
+      auto dataset_id = H5Dopen(gid, std::string(name).c_str(), H5P_DEFAULT);
+
+      auto dataspace_id = H5Dget_space (dataset_id);
+      H5Sget_simple_extent_dims(dataspace_id, dims, NULL);
+
+      array.Resize(dims[0], dims[1]);
+      H5Dread(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,
+              array.Data());
+      H5Sclose(dataspace_id);
+      H5Dclose(dataset_id);
+    };
+
+    readAttribute("dof_dimension", hmat_gid, dof_dimension_);
+    readAttribute("m", hmat_gid, size_[0]);
+    readAttribute("n", hmat_gid, size_[1]);
+
+    auto pattern_gid = H5Gopen(hmat_gid, "pattern", H5P_DEFAULT);
+    readAttribute("n_FRB", pattern_gid, pattern_.n_FRB);
+    readAttribute("n_LRB", pattern_gid, pattern_.n_LRB);
+
+    readArray2D("FRB", pattern_gid, pattern_.FRB_pattern);
+    readArray2D("LRB", pattern_gid, pattern_.LRB_pattern);
+    H5Gclose(pattern_gid);
+
+    std::cout << "Reading HMat from \"" << filename << "\" - " << size_[0] << "x" << size_[1] << " - " << dof_dimension_  << std::endl;
+
+    std::cout << " Number of blocks = " << pattern_.n_FRB + pattern_.n_LRB  << std::endl;
+
+    std::cout << " Number of full blocks = " << pattern_.n_FRB  << std::endl;
+    auto frbs_gid = H5Gopen(hmat_gid, "FRB", H5P_DEFAULT);
+    full_rank_blocks_.resize(pattern_.n_FRB);
+    il::int_t i_frb = 0;
+    for(auto && frb : full_rank_blocks_) {
+      frb = std::make_unique<il::Array2D<T>>();
+      readArray2D("frb_" + std::to_string(i_frb), frbs_gid, *frb);
+      ++i_frb;
+    }
+    H5Gclose(frbs_gid);
+
+    std::cout << " Number of low rank blocks = " << pattern_.n_LRB  << std::endl;
+    auto lrbs_gid = H5Gopen(hmat_gid, "LRB", H5P_DEFAULT);
+    low_rank_blocks_.resize(pattern_.n_LRB);
+    il::int_t i_lrb = 0;
+    for(auto && lrb : low_rank_blocks_) {
+      lrb = std::make_unique<LowRank<T>>();
+      std::string group = "lrb_" + std::to_string(i_lrb);
+      auto lrb_gid = H5Gopen(lrbs_gid, group.c_str(), H5P_DEFAULT);
+      readArray2D("A", lrb_gid, lrb->A);
+      readArray2D("B", lrb_gid, lrb->B);
+      H5Gclose(lrb_gid);
+      ++i_lrb;
+    }
+    H5Gclose(lrbs_gid);
+
+    H5Gclose(hmat_gid);
+    H5Fclose(file_id);
+
+    isBuilt_FR_ = isBuilt_LR_ = isBuilt_ = true;
+#endif
+  }
+
+
+   // -----------------------------------------------------------------------------
+  void buildFR(const bie::MatrixGenerator<T>& matrix_gen){
+    // construction of the full rank blocks
+    std::cout << " Loop on full blocks construction  \n";
+    std::cout << " N full blocks "<< pattern_.n_FRB << " \n";
+
+    full_rank_blocks_.resize(pattern_.n_FRB);
+#pragma omp parallel
+    {
+      std::vector<std::unique_ptr<il::Array2D<T>>> private_full_rank_blocks;
+
+#if defined(_OPENMP)
+      auto nthreads = omp_get_num_threads();
+      int chunk_size = std::max(1, int(pattern_.n_FRB / nthreads / 100));
+#endif
+#pragma omp for nowait schedule(static,chunk_size)
+      for (il::int_t i = 0; i < pattern_.n_FRB; i++) {
+        il::int_t i0 = pattern_.FRB_pattern(1, i);
+        il::int_t j0 = pattern_.FRB_pattern(2, i);
+        il::int_t iend = pattern_.FRB_pattern(3, i);
+        il::int_t jend = pattern_.FRB_pattern(4, i);
+
+        const il::int_t ni = matrix_gen.blockSize() * (iend - i0);
+        const il::int_t nj = matrix_gen.blockSize() * (jend - j0);
+
+        std::unique_ptr<il::Array2D<T>> a =std::make_unique<il::Array2D<T>>  (ni, nj);
+        matrix_gen.set(i0, j0, il::io, a->Edit());
+        full_rank_blocks_[i] = std::move(a);
+      }
+    }
+    isBuilt_FR_=true;
   }
 ////////////////////////////////////////////////////////////////////////////////
 ///
 /// \param matrix_gen
 /// \param epsilon
-void buildLR(const bie::MatrixGenerator<T>& matrix_gen,const double epsilon){
+  void buildLR(const bie::MatrixGenerator<T>& matrix_gen,const double epsilon){
     // constructing the low rank blocks
     dof_dimension_=matrix_gen.blockSize();
     std::cout << " Loop on low rank blocks construction  \n";
     std::cout << " N low rank blocks "<< pattern_.n_LRB << " \n";
     std::cout << "dof_dimension: "<< dof_dimension_ <<"\n";
+
+#if defined(_OPENMP)
+    auto nthreads = omp_get_max_threads();
+#endif
+
+    low_rank_blocks_.resize(pattern_.n_LRB);
 #pragma omp parallel
     {
-      std::vector<std::unique_ptr<bie::LowRank<T>>> private_low_rank_blocks;
 
-#pragma omp for nowait schedule(static)
+#if defined(_OPENMP)
+      int chunk_size = std::max(1, int(pattern_.n_LRB / nthreads / 100));
+#endif
+
+#pragma omp for nowait schedule(static, chunk_size)
       for (il::int_t i = 0; i < pattern_.n_LRB; i++) {
         il::int_t i0 = pattern_.LRB_pattern(1, i);
         il::int_t j0 = pattern_.LRB_pattern(2, i);
@@ -163,32 +326,22 @@ void buildLR(const bie::MatrixGenerator<T>& matrix_gen,const double epsilon){
         if (matrix_gen.blockSize()==1){
           lra = bie::adaptiveCrossApproximation<1>(matrix_gen, range0, range1, epsilon);
         } else if (matrix_gen.blockSize()==2){
-            lra = bie::adaptiveCrossApproximation<2>(matrix_gen, range0, range1, epsilon);
+          lra = bie::adaptiveCrossApproximation<2>(matrix_gen, range0, range1, epsilon);
         } else if (matrix_gen.blockSize()==3){
           lra = bie::adaptiveCrossApproximation<3>(matrix_gen, range0, range1, epsilon);
         } else {
           IL_UNREACHABLE;
         }
-        std::unique_ptr<bie::LowRank<T>> lra_p( new bie::LowRank<T>( std::move(lra) ) );
+        //std::unique_ptr<bie::LowRank<T>> lra_p( new bie::LowRank<T>( std::move(lra) ) );
 
         // store the rank in the low_rank pattern
-        pattern_.LRB_pattern(5, i) = (*lra_p).A.size(1);
-
-        private_low_rank_blocks.push_back(std::move(lra_p)); // lra_p does not exist after such call
+        pattern_.LRB_pattern(5, i) = lra.A.size(1);
+        low_rank_blocks_[i] = std::make_unique<bie::LowRank<T>>(lra); // lra_p does not exist after such call
       }
-
-#ifdef IL_OPENMP
-#pragma omp for schedule(static) ordered
-      for(int i=0; i<omp_get_num_threads(); i++) {
-#pragma omp ordered
-        low_rank_blocks_.insert(low_rank_blocks_.end(), std::make_move_iterator(private_low_rank_blocks.begin()), std::make_move_iterator(private_low_rank_blocks.end()));
-      }
-#else
-      low_rank_blocks_.insert(low_rank_blocks_.end(), std::make_move_iterator(private_low_rank_blocks.begin()), std::make_move_iterator(private_low_rank_blocks.end()));
-#endif
     }
-        isBuilt_LR_=true;
+    isBuilt_LR_=true;
   }
+
   //-----------------------------------------------------------------------------
   // filling up the h-matrix sub-blocks
   void build(const bie::MatrixGenerator<T>& matrix_gen,const double epsilon){
@@ -214,7 +367,7 @@ void buildLR(const bie::MatrixGenerator<T>& matrix_gen,const double epsilon){
     IL_EXPECT_FAST(isBuilt_);
     il::int_t n=0;
     for (il::int_t i=0;i<pattern_.n_FRB;i++){
-      il::Array2DView<double> a = (*full_rank_blocks_[i]).view();
+      auto & a = *full_rank_blocks_[i];
       n+=a.size(0)*a.size(1);
     }
     for (il::int_t i=0;i<pattern_.n_LRB;i++) {
@@ -237,55 +390,97 @@ void buildLR(const bie::MatrixGenerator<T>& matrix_gen,const double epsilon){
   // out - il:Array<T>
   il::Array<T> matvec(const il::Array<T> & x){
     IL_EXPECT_FAST(x.size()==size_[1]);
-    il::Array<T> y{size_[0],0.};
-    il::int_t n_B = pattern_.n_FRB + pattern_.n_LRB;
+    il::Array<T> y{size_[0], 0.};
 
-#pragma omp parallel
-      {
-          il::Array<T> yprivate{size_[0],0.};
-#pragma omp for nowait schedule(static)
-          for (il::int_t i = 0; i < n_B; i++) {
-              if (i < pattern_.n_FRB) // loop on full rank
-              {
-                  il::int_t i0=pattern_.FRB_pattern(1,i);
-                  il::int_t j0=pattern_.FRB_pattern(2,i);
-                  il::int_t iend=pattern_.FRB_pattern(3,i);
-                  il::int_t jend=pattern_.FRB_pattern(4,i);
+#if defined(_OPENMP)
+    auto nthreads = omp_get_max_threads();
+    il::Array2D<T> yprivate_storage{size_[0], nthreads};
+#endif
 
-                  il::Array2DView<T> a = (*full_rank_blocks_[i]).view();
-                  il::ArrayView<T> xs = x.view(il::Range{j0* dof_dimension_, jend* dof_dimension_});
-                  il::ArrayEdit<T> ys = yprivate.Edit(il::Range{i0*dof_dimension_, iend* dof_dimension_});
+#if defined(_OPENMP)
+    static bool first_time = true;
+#endif
 
-                  il::blas(1.0, a, xs, 1.0, il::io, ys);
-              }
-              else  /// loop on low rank
-              {   il::int_t ii = i - pattern_.n_FRB;
-                  il::int_t i0 = pattern_.LRB_pattern(1, ii);
-                  il::int_t j0 = pattern_.LRB_pattern(2, ii);
-                  il::int_t iend = pattern_.LRB_pattern(3, ii);
-                  il::int_t jend = pattern_.LRB_pattern(4, ii);
+#pragma omp parallel shared(first_time)
+    {
+#if defined(_OPENMP)
+      auto thread_num = omp_get_thread_num();
 
-                  il::Array2DView<double> a = (*low_rank_blocks_[ii]).A.view();
-                  il::Array2DView<double> b = (*low_rank_blocks_[ii]).B.view();
+      il::ArrayEdit<T> yprivate = yprivate_storage.Edit(il::Range{0, size_[0]}, thread_num);
+      for (il::int_t i = 0; i < size_[0]; ++i) {
+        yprivate[i] = 0.;
+      }
+#else
+      il::ArrayEdit<T> yprivate = y.Edit();
+#endif
 
-                  il::ArrayView<double> xs = x.view(il::Range{j0 * dof_dimension_, jend * dof_dimension_});
-                  il::ArrayEdit<double> ys = yprivate.Edit(il::Range{i0 * dof_dimension_, iend * dof_dimension_});
-                  const il::int_t r = a.size(1);
-                  il::Array<double> tmp{r, 0.0};
+#if defined(_OPENMP)
+      static bool first_time = true;
+      int chunk_size = std::max(1, int(pattern_.n_FRB / nthreads / 100));
+#pragma omp single
+      if (first_time) {
+        std::printf("  FRB - chunk size: %d\n", chunk_size);
+      }
+#endif
 
-                  il::blas(1.0, b, il::Dot::None, xs, 0.0, il::io,
-                           tmp.Edit());  // Note here we have stored b (not b^T)
-                  il::blas(1.0, a, tmp.view(), 1.0, il::io, ys);
-              }
-          }
-          // the reduction below may be improved ?
-#pragma omp critical
-          for (il::int_t j=0;j<y.size();j++){
-              y[j]+=yprivate[j];
-          }
-      };
-  return y;
+#pragma omp for nowait schedule(static, chunk_size)
+      for (il::int_t i = 0; i < pattern_.n_FRB; i++) {
+          il::int_t i0=pattern_.FRB_pattern(1,i);
+          il::int_t j0=pattern_.FRB_pattern(2,i);
+          il::int_t iend=pattern_.FRB_pattern(3,i);
+          il::int_t jend=pattern_.FRB_pattern(4,i);
+
+          il::Array2DView<T> a = (*full_rank_blocks_[i]).view();
+          il::ArrayView<T> xs = x.view(il::Range{j0* dof_dimension_, jend* dof_dimension_});
+          il::ArrayEdit<T> ys = yprivate.Edit(il::Range{i0*dof_dimension_, iend* dof_dimension_});
+
+          il::blas(1.0, a, xs, 1.0, il::io, ys);
+      }
+
+#if defined(_OPENMP)
+      chunk_size = std::max(1, int(pattern_.n_LRB / nthreads/ 100));
+#pragma omp single
+      if (first_time) {
+        std::printf("  LRB - chunk size: %d\n", chunk_size);
+        first_time = false;
+      }
+#endif
+
+#pragma omp for nowait schedule(static, chunk_size)
+      for (il::int_t ii = 0; ii < pattern_.n_LRB; ii++) {
+        auto i0 = pattern_.LRB_pattern(1, ii);
+        auto j0 = pattern_.LRB_pattern(2, ii);
+        auto iend = pattern_.LRB_pattern(3, ii);
+        auto jend = pattern_.LRB_pattern(4, ii);
+
+        auto a = low_rank_blocks_[ii]->A.view();
+        auto b = low_rank_blocks_[ii]->B.view();
+
+        auto xs = x.view(il::Range{j0 * dof_dimension_, jend * dof_dimension_});
+        auto ys = yprivate.Edit(il::Range{i0 * dof_dimension_, iend * dof_dimension_});
+        const il::int_t r = a.size(1);
+        il::Array<double> tmp{r, 0.0};
+
+        il::blas(1.0, b, il::Dot::None, xs, 0.0, il::io,
+                 tmp.Edit());  // Note here we have stored b (not b^T)
+        il::blas(1.0, a, tmp.view(), 1.0, il::io, ys);
+      }
+
+#if defined(_OPENMP)
+      il::int_t j = 0;
+#pragma omp for schedule(static)
+      for (il::int_t j = 0; j < y.size(); j++) {
+        auto yview = yprivate_storage.view(il::Range{j, j+1}, il::Range{0, nthreads});
+        for(il::int_t i = 0; i < nthreads; ++i) {
+          y[j] += yview(0, i);
+        }
+      }
+#endif
+    }
+
+    return y;
   }
+
   //--------------------------------------------------------------------------
   // H-Matrix vector multiplication with permutation for rectangular matrix cases (only 1 permutation)
   // in & out as std::vector

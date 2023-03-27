@@ -12,6 +12,7 @@
 ///
 ///=============================================================================
 
+/* -------------------------------------------------------------------------- */
 #include "cnpy.h"
 #include "core/BEMesh.h"
 #include "core/ElasticProperties.h"
@@ -21,6 +22,7 @@
 #include "elasticity/3d/BIE_elastostatic_triangle_0_impls.h"
 #include "elasticity/BIE_elastostatic.h"
 #include "hmat/hmatrix/Hmat.h"
+/* -------------------------------------------------------------------------- */
 #include <algorithm>
 #include <cmath>
 #include <il/Array2D.h>
@@ -29,6 +31,8 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <omp.h>
+/* -------------------------------------------------------------------------- */
 
 using Real1D = il::Array<double>;
 using Real2D = il::Array2D<double>;
@@ -49,6 +53,11 @@ int main(int argc, char *argv[]) {
 
   std::string f_coord = "mesh_coords.npy";
   std::string f_conn = "mesh_conn.npy";
+
+  // std::string f_coord =
+  //     "/home/ankit/geolab/bigwham_examples/src/mesh_coords.npy";
+  // std::string f_conn =
+  // "/home/ankit/geolab/bigwham_examples/src/mesh_conn.npy";
 
   auto coord_npy = cnpy::npy_load(f_coord);
   auto conn_npy = cnpy::npy_load(f_conn);
@@ -89,10 +98,14 @@ int main(int argc, char *argv[]) {
             << xcol.size(1) << std::endl;
 
   bie::HRepresentation hr =
-      bie::h_representation_square_matrix(my_mesh, max_leaf_size, eta);
+    bie::h_representation_square_matrix(my_mesh, max_leaf_size, eta);
 
   MatixGenerator M(my_mesh, ker, hr.permutation_0_);
-  bie::Hmat<double> h_(M, hr, eps_aca);
+
+  //bie::Hmat<double> h_(M, hr, eps_aca);
+  //h_.writeToFile("hmat.h5");
+
+  bie::Hmat<double> h_("hmat.h5");
 
   Real1D dd{M.size(1), 0.0};
   Real1D dd_perm{M.size(1), 0.0};
@@ -128,7 +141,14 @@ int main(int argc, char *argv[]) {
   // std::cout << "COS \n " << cos.size() << std::endl;
   // std::cout << print_array1D(cos) << std::endl;
 
-  trac_perm = h_.matvec(dd_perm);
+  double y0 = 0.;
+  auto start = omp_get_wtime();
+  for (il::int_t i = 0; i < 1000; ++i) {
+    trac_perm = h_.matvec(dd_perm);
+    y0 += trac_perm[0];
+  }
+  auto end = omp_get_wtime();
+  std::cout << "Hmat matvec: " << (end - start) / 1000 << "s - y0: " << y0 << std::endl;
 
   // std::cout << "Traction Perm \n " << print_array1D(trac_perm) << std::endl;
   for (il::int_t i = 0; i < M.sizeAsBlocks(0); i++) {

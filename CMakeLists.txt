@@ -20,6 +20,7 @@ set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
     Release
     Debug
     RelWithDebInfo
+    Sanitize
     )
 
 #if(NOT CMAKE_BUILD_TYPE)
@@ -35,20 +36,14 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(BIGWHAM_PYTHON_INTERFACE "Build Pybind11 binding" ON)
 option(BIGWHAM_MATHEMATICA_INTERFACE "make mathematica interface" OFF)  # --> to add static option to CMAKE_CXX_FLAGS
 option(BIGWHAM_TESTING "Build google tests" OFF)
+option(BIGWHAM_PROFILING "Add extra tool for profiling" OFF)
+option(BIGWHAM_HDF5 "Use HDF5 for checkpoint/restart" OFF)
 
-#option(USE_STATIC "use static" OFF)  # --> to add static option to CMAKE_CXX_FLAGS
 
 #####################################
 # optimization options              #
 #####################################
-set(_optimization_flags "-O3 -DNDEBUG")
-if(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
-    set(_optimization_flags "${_optimization_flags} -xHost")
-else()
-    set(_optimization_flags "${_optimization_flags} -march=native")
-endif()
-set(CMAKE_CXX_FLAGS_RELEASE "${_optimization_flags}" CACHE STRING "Flags used by the compiler during release builds" FORCE)
-
+include(ExtraCompilationProfiles)
 
 #if(USE_STATIC)
 #    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static")
@@ -149,6 +144,21 @@ mark_as_advanced(BIGWHAM_INCLUDE_DIRS)
 
 add_executable(BigWham_exe  main.cpp)
 target_link_libraries(BigWham_exe BigWhamShared)
+
+if (BIGWHAM_PROFILING)
+    find_package(ITT REQUIRED)
+    target_compile_definitions(BigWham PUBLIC HAS_ITT)
+    target_link_libraries(BigWham PUBLIC ${ITT_LIBRARIES})
+    target_include_directories(BigWham PUBLIC ${ITT_INCLUDE_DIRS})
+endif()
+
+
+if(BIGWHAM_HDF5)
+    find_package(HDF5 REQUIRED COMPONENTS C)
+    target_compile_definitions(BigWham PUBLIC BIGWHAM_HDF5)
+    target_link_libraries(BigWham PUBLIC ${HDF5_LIBRARIES})
+    target_include_directories(BigWham PUBLIC ${HDF5_INCLUDE_DIRS})
+endif()
 
 ################################################################
 # Pybind --->use with PYTHON version >=3.7
