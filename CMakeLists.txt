@@ -37,7 +37,7 @@ message(STATUS "CMAKE_BUILD_TYPE :  ${CMAKE_BUILD_TYPE}")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-option(BIGWHAM_PYTHON_INTERFACE "Build Pybind11 binding" ON)
+option(BIGWHAM_PYTHON_INTERFACE "Build Nanobind binding" ON)
 option(BIGWHAM_MATHEMATICA_INTERFACE "make mathematica interface" OFF)  # --> to add static option to CMAKE_CXX_FLAGS
 option(BIGWHAM_TESTING "Build google tests" OFF)
 
@@ -120,7 +120,7 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
 set(SOURCE_FILES "")
 add_subdirectory(src)
 
-message(STATUS ${SOURCE_FILES})
+# message(STATUS ${SOURCE_FILES})
 
 
 add_library(BigWham OBJECT ${SOURCE_FILES})
@@ -150,9 +150,12 @@ include(BigWhamTools)
 ################################################################
 message(STATUS "Building python interface: ${BIGWHAM_PYTHON_INTERFACE}")
 if(BIGWHAM_PYTHON_INTERFACE)
-    set(PYBIND11_PYTHON_VERSION 3)
-    add_external_package(pybind11 VERSION 2.2.4 CONFIG)
-    add_subdirectory(interfaces/python)
+    # set(PYBIND11_PYTHON_VERSION 3)
+    # add_external_package(pybind11 VERSION 2.2.4 CONFIG)
+    # add_subdirectory(interfaces/python)
+    find_package(Python 3.8 COMPONENTS Interpreter Development REQUIRED)
+    add_external_package(nanobind VERSION 1.0.0 CONFIG)
+    add_subdirectory(interfaces/nanobind)
 endif()
 
 ################################################################################
