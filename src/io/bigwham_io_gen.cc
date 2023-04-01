@@ -1,8 +1,75 @@
 #include "bigwham_io_gen.h"
 #include "bigwham_io_helper.h"
+#include "hmat/hierarchical_representation.h"
 #include <memory>
 /* -------------------------------------------------------------------------- */
 
+// for rectangular matrix
+void BigWhamIOGen::Set(
+    const std::vector<double> &coor_src, const std::vector<int> &conn_src,
+    const std::vector<double> &coor_rec, const std::vector<int> &conn_rec,
+    const std::string &kernel, const std::vector<double> &properties,
+    const int max_leaf_size, const double eta, const double eps_aca) {
+
+  this->kernel_name_ = kernel;
+  max_leaf_size_ = max_leaf_size;
+  eta_ = eta;
+  epsilon_aca_ = eps_aca;
+  ElasticProperties elas(properties[0], properties[1]);
+  std::cout << " Now setting things for kernel ... " << kernel_name_
+            << " with properties size " << properties.size() << "\n";
+  il::Timer tt;
+
+  switch (hash_djb2a(kernel_name_)) {
+  case "2DS0-2DP-T"_sh: {
+    // 2D Segment0 and 2D Point
+    spatial_dimension_ = 2;
+    using src_elem = Segment<0>;
+    using rec_elem = Point<2>;
+    mesh_src_ = createMeshFromVect<src_elem>(
+        spatial_dimension_, /* num vertices */ 2, coor_src, conn_src);
+    mesh_rec_ = createMeshFromVect<rec_elem>(
+        spatial_dimension_, /* num vertices */ 1, coor_src, conn_src);
+    ker_obj_ = std::make_shared<
+        BieElastostatic<src_elem, rec_elem, ElasticKernelType::T>>(
+        elas, spatial_dimension_);
+    break;
+  }
+  default: {
+    std::cout << "wrong inputs -abort \n";
+    il::abort();
+  }
+  }
+  mesh_ = mesh_src_;
+  tt.Start();
+  this->hr_ = HRepresentationRectangularMatrix(mesh_src_, mesh_rec_,
+                                               max_leaf_size_, eta_);
+  tt.Stop();
+  h_representation_time_ = tt.time();
+  tt.Reset();
+  tt.Start();
+  bie::BieMatrixGenerator<double> M(mesh_src_, mesh_rec_, ker_obj_, hr_);
+  hmat_ = std::make_shared<Hmat<double>>(M, epsilon_aca_);
+  tt.Stop();
+  hmat_time_ = tt.time();
+  if (hmat_->isBuilt()) {
+    is_built_ = true;
+    dof_dimension_ = hmat_->dofDimension();
+    std::cout << "HMAT --> built \n";
+    double test_cr = hmat_->compressionRatio();
+    std::cout << "HMAT set"
+              << ", CR = " << test_cr << ", eps_aca = " << epsilon_aca_
+              << ", eta = " << eta_ << "\n";
+    // std::cout << "H-mat construction time = :  " << hmat_time_ << "\n";
+  } else {
+    is_built_ = false;
+  }
+
+  std::cout << "BigWhamIO ENDED\n";
+}
+/* -------------------------------------------------------------------------- */
+
+// for square matrix
 // coor and conn are assumed to be passed in row-major storage format
 void BigWhamIOGen::SetSelf(const std::vector<double> &coor,
                            const std::vector<int> &conn,

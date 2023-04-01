@@ -19,6 +19,7 @@
 
 namespace py = pybind11;
 using namespace bie;
+/* -------------------------------------------------------------------------- */
 
 // get fullBlocks
 class PyGetFullBlocks {
@@ -119,7 +120,7 @@ PYBIND11_MODULE(py_bigwham, m) {
   //    // option py::dynamic_attr() added to allow new members to be created
   //    dynamically);
   py::class_<BigWhamIOGen>(m, "BigWhamIOSelf", py::dynamic_attr(),
-                                py::module_local())
+                           py::module_local())
       .def(py::init<>()) // constructor
       .def("hmat_destructor", &BigWhamIOGen::HmatrixDestructor)
       .def("set", &BigWhamIOGen::SetSelf)
@@ -137,7 +138,8 @@ PYBIND11_MODULE(py_bigwham, m) {
       // numpy array!!
       .def(
           "matvec_permute",
-          [](BigWhamIOGen &self, const std::vector<double> &x) -> decltype(auto) {
+          [](BigWhamIOGen &self,
+             const std::vector<double> &x) -> decltype(auto) {
             auto v = new std::vector<double>(self.MatVecPerm(x));
             auto capsule = py::capsule(v, [](void *v) {
               delete reinterpret_cast<std::vector<double> *>(v);
@@ -155,7 +157,8 @@ PYBIND11_MODULE(py_bigwham, m) {
       // CP
       .def(
           "matvec",
-          [](BigWhamIOGen &self, const std::vector<double> &x) -> decltype(auto) {
+          [](BigWhamIOGen &self,
+             const std::vector<double> &x) -> decltype(auto) {
             auto v = new std::vector<double>(self.MatVec(x));
             auto capsule = py::capsule(v, [](void *v) {
               delete reinterpret_cast<std::vector<double> *>(v);
@@ -172,15 +175,48 @@ PYBIND11_MODULE(py_bigwham, m) {
   //      .def("getBlockClstrTime", &BigWhamIOGen::getBlockClstrTime)
   //      .def("getBinaryClstrTime", &BigWhamIOGen::getBinaryClstrTime);
 
+  /* --------------------------------------------------------------------------
+   */
   py::class_<PyGetFullBlocks>(m, "PyGetFullBlocks")
       .def(py::init<>())
       .def("set", &PyGetFullBlocks::set)
       .def("get_val_list", &PyGetFullBlocks::getValList)
       .def("get_col", &PyGetFullBlocks::getColumnN)
       .def("get_row", &PyGetFullBlocks::getRowN);
+  /* --------------------------------------------------------------------------
+   */
 
   declare_array<double>(m, "Real2D");
   declare_array<il::int_t>(m, "Int2D");
 
   // py::class_<bie::Segment<0>>(m, "Segment0").def(py::init<>());
+
+  /* --------------------------------------------------------------------------
+   */
+  py::class_<BigWhamIOGen>(m, "BigWhamIORect", py::dynamic_attr())
+      .def(py::init<>()) 
+      .def("hmat_destructor", &BigWhamIOGen::HmatrixDestructor)
+      .def("set", &BigWhamIOGen::Set)
+      .def("get_collocation_points", &BigWhamIOGen::GetCollocationPoints)
+      .def("get_permutation", &BigWhamIOGen::GetPermutation)
+      .def("get_compression_ratio", &BigWhamIOGen::GetCompressionRatio)
+      .def("get_kernel_name", &BigWhamIOGen::kernel_name)
+      .def("get_spatial_dimension", &BigWhamIOGen::spatial_dimension)
+      .def("matrix_size", &BigWhamIOGen::MatrixSize)
+      .def("get_hpattern", &BigWhamIOGen::GetHPattern)
+      .def("convert_to_global", &BigWhamIOGen::ConvertToGlobal)
+      .def("convert_to_local", &BigWhamIOGen::ConvertToLocal)
+      .def(
+          "matvec",
+          [](BigWhamIOGen &self,
+             const std::vector<double> &x) -> decltype(auto) {
+            auto v = new std::vector<double>(self.MatVec(x));
+            auto capsule = py::capsule(v, [](void *v) {
+              delete reinterpret_cast<std::vector<double> *>(v);
+            });
+            return py::array(v->size(), v->data(), capsule);
+          },
+          " dot product between hmat and a vector x", py::arg("x"),
+          py::return_value_policy::reference)
+      .def("get_hmat_time", &BigWhamIOGen::hmat_time);
 }

@@ -10,10 +10,13 @@
 
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
+#include <nanobind/stl/vector.h>
 
 #include "io/bigwham_io_gen.h"
 
 namespace nb = nanobind;
+template <typename T>
+using pyarray = nb::ndarray<nb::numpy, T, nb::shape<nb::any>>;
 /* -------------------------------------------------------------------------- */
 
 // get fullBlocks
@@ -47,48 +50,9 @@ public:
     std::cout << " --- set pyGetFullBlocks completed ---- \n";
   }
 
-  std::vector<double> &getgetValList() { return this->val_list; };
-  std::vector<int> &getgetColumnN() { return this->columN; };
-  std::vector<int> &getgetRowN() { return this->rowN; };
-
-  // the following lines are
-  // taken from https://github.com/pybind/pybind11/issues/1042
-  // nb::ndarray getRowN() {
-  //   auto v = new std::vector<int>(getgetRowN());
-  //   this->rowN = std::vector<int>();
-  //   auto capsule = nb::capsule(
-  //       v, [](void *v) { delete reinterpret_cast<std::vector<int> *>(v); });
-  //   return nb::array(v->size(), v->data(), capsule);
-  // };
-
-  // nb::ndarray getRowN() {
-  //   // auto v = new std::vector<int>(getgetRowN());
-  //   // this->rowN = std::vector<int>();
-  //   // auto capsule = nb::capsule(
-  //   //     v, [](void *v) { delete reinterpret_cast<std::vector<int> *>(v);
-  //   });
-  //   // return nb::array(v->size(), v->data(), capsule);
-  //   size_t shape = {v.size()};
-  //   return nb::ndarray<nb::numpy, int>(getgetValList().data(), 1, shape);
-  // };
-
-  // nb::array getColumnN() {
-  //   auto v = new std::vector<int>(getgetColumnN());
-  //   this->columN = std::vector<int>();
-  //   auto capsule = nb::capsule(
-  //       v, [](void *(v)) { delete reinterpret_cast<std::vector<int> *>(v);
-  //       });
-  //   return nb::array(v->size(), v->data(), capsule);
-  // };
-
-  // nb::array getValList() {
-  //   auto v = new std::vector<double>(getgetValList());
-  //   this->val_list = std::vector<double>();
-  //   auto capsule = nb::capsule(
-  //       v, [](void *v) { delete reinterpret_cast<std::vector<double> *>(v);
-  //       });
-  //   return nb::array(v->size(), v->data(), capsule);
-  // };
+  std::vector<double> GetValList() { return this->val_list; };
+  std::vector<int> GetColumnN() { return this->columN; };
+  std::vector<int> GetRowN() { return this->rowN; };
 };
 /* -------------------------------------------------------------------------- */
 
@@ -110,57 +74,43 @@ NB_MODULE(py_bigwham, m) {
       .def("get_hpattern", &BigWhamIOGen::GetHPattern)
       .def("convert_to_global", &BigWhamIOGen::ConvertToGlobal)
       .def("convert_to_local", &BigWhamIOGen::ConvertToLocal)
-      //.def("hdotProductInPermutted", &BigWhamIOGen::hdotProductInPermutted)
-      // I change the previous binding of hdotProductInPermutted to return a
-      // numpy array!!
       .def(
           "matvec_permute",
           [](BigWhamIOGen &self,
-             const std::vector<double> &x) -> decltype(auto) {
-            auto v = new std::vector<double>(self.MatVecPerm(x));
-            auto capsule = nb::capsule(v, [](void *v) {
-              delete reinterpret_cast<std::vector<double> *>(v);
-            });
-            return nb::array(v->size(), v->data(), capsule);
-          },
-          " dot product between hmat and a vector x", nb::arg("x"),
-          nb::return_value_policy::reference)
-
-      //.def("hdotProduct",            &BigWhamIOGen::matvect, " dot product
-      // between hmat and a vector x",nb::arg("x"))
-      // I change the previous binding of matvect to return a numpy array!!
-      // todo: is it possible to move the result of the dot product to an
-      // std::array? the array is contiguous in memory but not the vector!!!!!!
-      // CP
+             const std::vector<double> &x){
+            auto v = self.MatVecPerm(x);
+            size_t shape[1] = {v.size()};
+            return pyarray<double>(v.data(), 1, shape);
+          })
       .def(
           "matvec",
           [](BigWhamIOGen &self,
-             const std::vector<double> &x) -> decltype(auto) {
-            auto v = new std::vector<double>(self.MatVec(x));
-            auto capsule = nb::capsule(v, [](void *v) {
-              delete reinterpret_cast<std::vector<double> *>(v);
-            });
-            return nb::array(v->size(), v->data(), capsule);
-          },
-          " dot product between hmat and a vector x", nb::arg("x"),
-          nb::return_value_policy::reference)
-
-      //      .def("computeStresses", &BigWhamIOGen::computeStresses,
-      //           "function to compute the stress at a given set of points")
-      //      .def("computeDisplacements", &BigWhamIOGen::computeDisplacements)
+             const std::vector<double> &x) {
+            auto v = self.MatVec(x);
+            size_t shape[1] = {v.size()};
+            return pyarray<double>(v.data(), 1, shape);
+          })
       .def("get_hmat_time", &BigWhamIOGen::hmat_time);
-  //      .def("getBlockClstrTime", &BigWhamIOGen::getBlockClstrTime)
-  //      .def("getBinaryClstrTime", &BigWhamIOGen::getBinaryClstrTime);
+/* -------------------------------------------------------------------------- */
 
   nb::class_<PyGetFullBlocks>(m, "PyGetFullBlocks")
       .def(nb::init<>())
       .def("set", &PyGetFullBlocks::set)
       .def("get_val_list",
            [](PyGetFullBlocks &self) {
-             auto v = self.getgetValList();
-             size_t shape = {v.size()};
-             return nb::ndarray<nb::numpy, double>(v.data(), 1, shape);
+             auto v = self.GetValList();
+             size_t shape[1] = {v.size()};
+             return pyarray<double>(v.data(), 1, shape);
            })
-      .def("get_col", &PyGetFullBlocks::getColumnN)
-      .def("get_row", &PyGetFullBlocks::getRowN);
+      .def("get_col",
+           [](PyGetFullBlocks &self) {
+             auto v = self.GetColumnN();
+             size_t shape[1] = {v.size()};
+             return pyarray<int>(v.data(), 1, shape);
+           })
+      .def("get_row", [](PyGetFullBlocks &self) {
+        auto v = self.GetRowN();
+        size_t shape[1] = {v.size()};
+        return pyarray<int>(v.data(), 1, shape);
+      });
 }

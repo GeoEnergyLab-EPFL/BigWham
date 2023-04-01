@@ -1,6 +1,8 @@
 #ifndef BIGWHAM_IO_GEN_H
 #define BIGWHAM_IO_GEN_H
 
+#include <cstdlib>
+
 #include "core/be_mesh.h"
 #include "core/bie_kernel.h"
 #include "core/elastic_properties.h"
@@ -16,7 +18,6 @@
 #include "elasticity/bie_elastostatic.h"
 #include "elasticity/fullspace_iso_axisymm_flat_ring_unidirectional/bie_elastostatic_axi3d0.h"
 #include "elasticity/fullspace_iso_sp3d_segment/bie_elastostatic_sp3d.h"
-#include <cstdlib>
 
 using namespace bie;
 
