@@ -2,6 +2,11 @@
 #define BIGWHAM_IO_GEN_H
 
 #include <cstdlib>
+#include <iostream>
+
+#ifdef IL_OPENMP
+#include <omp.h>
+#endif
 
 #include "core/be_mesh.h"
 #include "core/bie_kernel.h"
@@ -34,7 +39,6 @@ private:
   double h_representation_time_;
   double hmat_time_;
 
-
   std::shared_ptr<Hmat<double>> hmat_;
   std::shared_ptr<HRepresentation> hr_;
   std::shared_ptr<Mesh> mesh_src_;
@@ -43,7 +47,15 @@ private:
   std::shared_ptr<BieKernel<double>> ker_obj_;
 
 public:
-  BigWhamIOGen() {}
+  BigWhamIOGen() {
+#ifdef IL_OPENMP
+#pragma omp parallel
+    {
+#pragma omp single
+      std::cout << "NUM OF OMP THREADS: " << omp_get_num_threads() << std::endl;
+    }
+#endif
+  }
   ~BigWhamIOGen() {}
 
   // square matrices
@@ -80,7 +92,7 @@ public:
   std::string kernel_name() const { return kernel_name_; }
   int spatial_dimension() const { return spatial_dimension_; }
   int dof_dimension() const { return dof_dimension_; }
-  bool is_built() const {return is_built_;}
+  bool is_built() const { return is_built_; }
   void HmatrixDestructor() {
     // this function will free the memory and set the hmat obj to its initial
     // status prior to initialization this will avoid ownership specifications
