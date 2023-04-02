@@ -64,29 +64,24 @@ public:
   // assign element list in this implementation
   virtual void ConstructMesh() = 0;
 
-  std::vector<double>
-  ConvertToGlobal(const std::vector<double> &local_vec) const;
+  il::Array<double>
+  ConvertToGlobal(il::ArrayView<double> local_vec) const;
 
-  std::vector<double>
-  ConvertToLocal(const std::vector<double> &global_vec) const;
+  il::Array<double>
+  ConvertToLocal(il::ArrayView<double> global_vec) const;
 };
 
 /* -------------------------------------------------------------------------- */
 
-inline std::vector<double>
-Mesh::ConvertToGlobal(const std::vector<double> &local_vec) const {
-  std::vector<double> v;
+inline il::Array<double>
+Mesh::ConvertToGlobal(il::ArrayView<double> local_vec) const {
+  il::Array<double> v;
   IL_ASSERT(local_vec.size() == num_collocation_points_ * spatial_dimension_);
-  v.resize(local_vec.size());
+  v.Resize(local_vec.size());
 
 #pragma omp parallel for
   for (auto i = 0; i < num_elements_; i++) {
-    il::Array<double> lvec_tmp;
-    lvec_tmp.Resize(spatial_dimension_);
-    for (int d = 0; d < spatial_dimension_; d++) {
-      lvec_tmp[d] = local_vec[i * spatial_dimension_ + d];
-    }
-    auto v_tmp = element_list_[i]->ConvertToGlobal(lvec_tmp);
+    auto v_tmp = element_list_[i]->ConvertToGlobal(local_vec.view({i*spatial_dimension_, i*spatial_dimension_+spatial_dimension_}));
     for (int d = 0; d < spatial_dimension_; d++) {
       v[i * spatial_dimension_ + d] = v_tmp[d];
     }
@@ -95,21 +90,16 @@ Mesh::ConvertToGlobal(const std::vector<double> &local_vec) const {
   return v;
 }
 /* -------------------------------------------------------------------------- */
-inline std::vector<double>
-Mesh::ConvertToLocal(const std::vector<double> &global_vec) const {
-  std::vector<double> v;
+inline il::Array<double>
+Mesh::ConvertToLocal(il::ArrayView<double> global_vec) const {
+  il::Array<double> v;
 
   IL_ASSERT(global_vec.size() == num_collocation_points_ * spatial_dimension_);
-  v.resize(global_vec.size());
+  v.Resize(global_vec.size());
 
 #pragma omp parallel for
   for (auto i = 0; i < num_elements_; i++) {
-    il::Array<double> gvec_tmp;
-    gvec_tmp.Resize(spatial_dimension_);
-    for (int d = 0; d < spatial_dimension_; d++) {
-      gvec_tmp[d] = global_vec[i * spatial_dimension_ + d];
-    }
-    auto v_tmp = element_list_[i]->ConvertToLocal(gvec_tmp);
+     auto v_tmp = element_list_[i]->ConvertToLocal(global_vec.view({i*spatial_dimension_, i*spatial_dimension_+spatial_dimension_}));
     for (int d = 0; d < spatial_dimension_; d++) {
       v[i * spatial_dimension_ + d] = v_tmp[d];
     }

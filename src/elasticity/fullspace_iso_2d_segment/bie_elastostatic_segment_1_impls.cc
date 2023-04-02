@@ -49,10 +49,10 @@ BieElastostatic<Segment<1>, Segment<1>, ElasticKernelType::H>::influence(
   for (int i = 0; i < 2; ++i) {
     xe[i] = r_col(i_r, i) - Xmid[i];
   }
-  xe = source_elt.ConvertToLocal(xe);
+  xe = source_elt.ConvertToLocal(xe.view());
 
-  auto n = source_elt.ConvertToLocal(receiver_elt.normal());
-  auto s = source_elt.ConvertToLocal(receiver_elt.tangent1());
+  auto n = source_elt.ConvertToLocal(receiver_elt.normal().view());
+  auto s = source_elt.ConvertToLocal(receiver_elt.tangent1().view());
 
   double h = source_elt.size();
 

@@ -292,19 +292,19 @@ BigWhamIOGen::MatVecPerm(const std::vector<double> &x) const {
 }
 /* -------------------------------------------------------------------------- */
 
-std::vector<double>
-BigWhamIOGen::ConvertToGlobal(const std::vector<double> &x_local) const {
+il::Array<double>
+BigWhamIOGen::ConvertToGlobal(il::ArrayView<double> x_local) const {
   // Input: x in original state (not permutted)
   // Output: in original state (not permutted)
   return mesh_->ConvertToGlobal(x_local);
 }
 /* -------------------------------------------------------------------------- */
 
-std::vector<double>
-BigWhamIOGen::ConvertToLocal(const std::vector<double> &x_global) const {
+il::Array<double>
+BigWhamIOGen::ConvertToLocal(il::ArrayView<double> x_global) const {
   // Input: x in original state (not permutted)
   // Output: in original state (not permutted)
-  return mesh_->ConvertToLocal(x_global);
+  return mesh_->ConvertToLocal(x_global.view());
 }
 /* -------------------------------------------------------------------------- */
 

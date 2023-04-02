@@ -44,7 +44,7 @@ BieElastostatic<Segment<0>, Segment<0>, ElasticKernelType::U>::influence(
   for (int i = 0; i < 2; ++i) {
     xe[i] = r_col(i_r, i) - Xmid[i];
   }
-  auto xe_local = source_elt.ConvertToLocal(xe);
+  auto xe_local = source_elt.ConvertToLocal(xe.view());
 
   double h = source_elt.size();
 
@@ -60,12 +60,12 @@ BieElastostatic<Segment<0>, Segment<0>, ElasticKernelType::U>::influence(
   uk_2[0] = uik(0, 1);
   uk_2[1] = uik(1, 1);
 
-  auto uk_1_gl = source_elt.ConvertToGlobal(uk_1);
-  auto uk_2_gl = source_elt.ConvertToGlobal(uk_2);
+  auto uk_1_gl = source_elt.ConvertToGlobal(uk_1.view());
+  auto uk_2_gl = source_elt.ConvertToGlobal(uk_2.view());
 
   // switch back to the receiver element coor
-  auto uk_1_local = receiver_elt.ConvertToLocal(uk_1_gl);
-  auto uk_2_local = receiver_elt.ConvertToLocal(uk_2_gl);
+  auto uk_1_local = receiver_elt.ConvertToLocal(uk_1_gl.view());
+  auto uk_2_local = receiver_elt.ConvertToLocal(uk_2_gl.view());
 
   std::vector<double> stnl(4, 0.); // column major storage..
   stnl[0] = uk_1_local[0];
@@ -98,7 +98,7 @@ BieElastostatic<Segment<0>, Segment<0>, ElasticKernelType::T>::influence(
   for (int i = 0; i < 2; ++i) {
     xe[i] = r_col(i_r, i) - Xmid[i];
   }
-  xe = source_elt.ConvertToLocal(xe);
+  xe = source_elt.ConvertToLocal(xe.view());
 
   double h = source_elt.size();
 
@@ -118,7 +118,7 @@ BieElastostatic<Segment<0>, Segment<0>, ElasticKernelType::T>::influence(
   stress_norm(1, 0) = stress_norm(0, 1);
 
   // receiver normal and tangent vector in the source local coordinates system
-  auto n = source_elt.ConvertToLocal(receiver_elt.normal());
+  auto n = source_elt.ConvertToLocal(receiver_elt.normal().view());
 
   //  in the coord sys of the source elt
   auto tt_s = il::dot(stress_shear, n);
@@ -126,9 +126,9 @@ BieElastostatic<Segment<0>, Segment<0>, ElasticKernelType::T>::influence(
 
   // in local coord sys of the receiver element
   auto tt_s_local =
-      receiver_elt.ConvertToLocal(source_elt.ConvertToGlobal(tt_s));
+      receiver_elt.ConvertToLocal(source_elt.ConvertToGlobal(tt_s.view()).view());
   auto tt_n_local =
-      receiver_elt.ConvertToLocal(source_elt.ConvertToGlobal(tt_n));
+      receiver_elt.ConvertToLocal(source_elt.ConvertToGlobal(tt_n.view()).view());
 
   std::vector<double> stnl(4, 0.);
 
@@ -173,7 +173,7 @@ BieElastostatic<Segment<0>, Segment<0>, ElasticKernelType::H>::influence(
   for (int i = 0; i < 2; ++i) {
     xe[i] = r_col(i_r, i) - Xmid[i];
   }
-  auto xe_local = source_elt.ConvertToLocal(xe);
+  auto xe_local = source_elt.ConvertToLocal(xe.view());
 
   double h = source_elt.size();
 
@@ -182,8 +182,8 @@ BieElastostatic<Segment<0>, Segment<0>, ElasticKernelType::H>::influence(
                    xe_local[0], xe_local[1]);
 
   // receiver normal and tangent vector in the source local coordinates system
-  auto n = source_elt.ConvertToLocal(receiver_elt.normal());
-  auto s = source_elt.ConvertToLocal(receiver_elt.tangent1());
+  auto n = source_elt.ConvertToLocal(receiver_elt.normal().view());
+  auto s = source_elt.ConvertToLocal(receiver_elt.tangent1().view());
 
   double n1n1 = n[0] * n[0];
   double n2n2 = n[1] * n[1];
@@ -246,7 +246,7 @@ BieElastostatic<Segment<0>, Point<2>, ElasticKernelType::T>::influence(
   for (int i = 0; i < 2; ++i) {
     xe[i] = r_col(i_r, i) - Xmid[i];
   }
-  xe = source_elt.ConvertToLocal(xe);
+  xe = source_elt.ConvertToLocal(xe.view());
 
   double h = source_elt.size();
 
@@ -270,7 +270,7 @@ BieElastostatic<Segment<0>, Point<2>, ElasticKernelType::T>::influence(
   stress_norm(1, 0) = stress_norm(0, 1);
 
   // source norrmal vector in local
-  auto n = source_elt.ConvertToLocal(source_elt.normal());
+  auto n = source_elt.ConvertToLocal(source_elt.normal().view());
 
   //  in the local coord sys of the source elt
   auto tt_s = il::dot(stress_shear, n);
@@ -278,9 +278,9 @@ BieElastostatic<Segment<0>, Point<2>, ElasticKernelType::T>::influence(
 
   // in local coord sys of the receiver element
   auto tt_s_local =
-      receiver_elt.ConvertToLocal(source_elt.ConvertToGlobal(tt_s));
+      receiver_elt.ConvertToLocal(source_elt.ConvertToGlobal(tt_s.view()).view());
   auto tt_n_local =
-      receiver_elt.ConvertToLocal(source_elt.ConvertToGlobal(tt_n));
+      receiver_elt.ConvertToLocal(source_elt.ConvertToGlobal(tt_n.view()).view());
 
   std::vector<double> stnl(4, 0.);
 

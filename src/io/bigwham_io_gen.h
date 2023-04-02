@@ -80,8 +80,8 @@ public:
   void GetDiagonal(std::vector<double> &val_list) const;
   std::vector<double> MatVec(const std::vector<double> &x) const;
   std::vector<double> MatVecPerm(const std::vector<double> &x) const;
-  std::vector<double> ConvertToGlobal(const std::vector<double> &x_local) const;
-  std::vector<double> ConvertToLocal(const std::vector<double> &x_global) const;
+  il::Array<double> ConvertToGlobal(il::ArrayView<double> x_local) const;
+  il::Array<double> ConvertToLocal(il::ArrayView<double> x_global) const;
   long MatrixSize(const int k) { return hmat_->size(k); };
   double GetCompressionRatio() const {
     IL_EXPECT_FAST(is_built_);

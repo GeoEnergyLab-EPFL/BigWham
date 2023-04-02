@@ -12,7 +12,6 @@
 #include <il/math.h>
 
 #include "hmat/hmatrix/hmat.h"
-#include "bigwham_io.h"
 #include "io/bigwham_io_gen.h"
 
 #include "core/be_mesh.h"
@@ -41,11 +40,11 @@ TEST(bigwham_io_2d, Sp3D0_1_1) {
     k = k + 2;
   }
 
-  Bigwhamio my_io;
+  BigWhamIOGen my_io;
   std::vector<double> properties{1., 0., 100};
-  my_io.set(coor, conn, "S3DP0", properties, 32, 2, 1.e-3);
+  my_io.SetSelf(coor, conn, "S3DP0", properties, 32, 2, 1.e-3);
 
-  ASSERT_TRUE(abs(my_io.getCompressionRatio() - 0.12664) < 1e-4);
+  ASSERT_TRUE(std::abs(my_io.GetCompressionRatio() - 0.12664) < 1e-4);
 }
 /* -------------------------------------------------------------------------- */
 
@@ -70,11 +69,11 @@ TEST(bigwham_io_2d, Sp3D0_1_2) {
     k = k + 2;
   }
 
-  Bigwhamio my_io;
+  BigWhamIOGen my_io;
   std::vector<double> properties{1., 0., 100};
-  my_io.set(coor, conn, "S3DP0", properties, 32, 2, 1.e-3);
-  ASSERT_TRUE(my_io.getProblemDimension() == 2 &&
-              my_io.getSpatialDimension() == 2); // h_.isBuilt()
+  my_io.SetSelf(coor, conn, "S3DP0", properties, 32, 2, 1.e-3);
+  ASSERT_TRUE(my_io.dof_dimension() == 2 &&
+              my_io.spatial_dimension() == 2); // h_.isBuilt()
 }
 /* -------------------------------------------------------------------------- */
 
@@ -100,17 +99,17 @@ TEST(bigwham_io_2d, Sp3D0_1_3) {
     k = k + 2;
   }
 
-  Bigwhamio my_io;
+  BigWhamIOGen my_io;
   std::vector<double> properties{1., 0., 100};
-  my_io.set(coor, conn, "S3DP0", properties, 32, 2, 1.e-3);
+  my_io.SetSelf(coor, conn, "S3DP0", properties, 32, 2, 1.e-3);
 
-  std::vector<double> x(my_io.matrixSize(1), 0.);
+  std::vector<double> x(my_io.MatrixSize(1), 0.);
   for (il::int_t i = 0; i < n_elts; i++) {
     x[2 * i + 1] = 4.0 * sqrt(L * L - coor[2 * i] * coor[2 * i]);
   }
-  auto y = my_io.matvect(x);
+  auto y = my_io.MatVec(x);
   std::vector<double> the_diag(n_elts * 2, 0.);
-  my_io.getDiagonal(the_diag);
+  my_io.GetDiagonal(the_diag);
 
   il::Array<double> rel_err{n_elts, 0.};
   for (il::int_t i = 0; i < n_elts; i++) {
@@ -145,19 +144,19 @@ TEST(bigwham_io_2d, 2DP0_1) {
     k = k + 2;
   }
 
-  Bigwhamio my_io;
+  BigWhamIOGen my_io;
   std::vector<double> properties{1., 0.};
-  my_io.set(coor, conn, "2DP0", properties, 32, 2, 1.e-3);
+  my_io.SetSelf(coor, conn, "2DP0", properties, 32, 2, 1.e-3);
 
-  std::vector<double> x(my_io.matrixSize(1), 0.);
+  std::vector<double> x(my_io.MatrixSize(1), 0.);
   for (il::int_t i = 0; i < n_elts; i++) {
     x[2 * i + 1] = 4.0 * sqrt(L * L - coor[2 * i] * coor[2 * i]);
   }
-  auto y = my_io.matvect(x);
+  auto y = my_io.MatVec(x);
   std::vector<double> the_diag(n_elts * 2, 0.);
-  my_io.getDiagonal(the_diag);
+  my_io.GetDiagonal(the_diag);
 
-  il::Array<double> rel_err{n_elts, 0.};
+  il::Array<double> rel_err{n_elts, -1.};
   for (il::int_t i = 0; i < n_elts; i++) {
     rel_err[i] =
         sqrt((the_diag[2 * i + 1] - 190.985) * (the_diag[2 * i + 1] - 190.985));

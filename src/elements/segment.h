@@ -115,7 +115,7 @@ template <> inline void Segment<1>::SetCollocationPoints() {
   for (int i = 0; i < 2; ++i) {
     xaux[0] = (size_)*x_col(i, 0) / 2.;
     xaux[1] = (size_)*x_col(i, 1) / 2.;
-    xaux = this->ConvertToGlobal(xaux); // il::dot(Rt, xaux);
+    xaux = this->ConvertToGlobal(xaux.view()); // il::dot(Rt, xaux);
     x_col(i, 0) = xaux[0] + this->centroid_[0];
     x_col(i, 1) = xaux[1] + this->centroid_[1];
   }

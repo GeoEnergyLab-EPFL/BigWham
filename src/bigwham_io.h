@@ -443,14 +443,14 @@ public:
   std::vector<double> ConvertToGlobal(const std::vector<double> &x_local) {
     // Input: x in original state (not permutted)
     // Output: in original state (not permutted)
-    return mesh_->ConvertToGlobal(x_local);
+    return mesh_->ConvertToGlobal(x_local.view());
   }
   /* -------------------------------------------------------------------------
    */
   std::vector<double> ConvertToLocal(const std::vector<double> &x_global) {
     // Input: x in original state (not permutted)
     // Output: in original state (not permutted)
-    return mesh_->ConvertToLocal(x_global);
+    return mesh_->ConvertToLocal(x_global.view());
   }
 
 }; // end class bigwhamio

@@ -30,12 +30,12 @@ public:
   virtual void SetElement(const il::Array2D<double> &vertices) override;
   virtual void SetRotationMatrices() override;
   virtual il::Array<double>
-  ConvertToGlobal(const il::Array<double> &x) const override {
-    return x;
+  ConvertToGlobal(il::ArrayView<double> x) const override {
+    return il::Array<double>(x);
   }
   virtual il::Array<double>
-  ConvertToLocal(const il::Array<double> &x) const override {
-    return x;
+  ConvertToLocal(il::ArrayView<double> x) const override {
+    return il::Array<double>(x);
   }
 
 protected:

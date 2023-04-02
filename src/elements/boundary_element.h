@@ -89,11 +89,17 @@ public:
   il::Array2D<double> rotation_matrix() const { return rotation_matrix_; }
   il::Array2D<double> rotation_matrix_t() const { return rotation_matrix_t_; }
 
-  virtual il::Array<double> ConvertToLocal(const il::Array<double>& global_vec) const {
-    return il::dot(this->rotation_matrix_, global_vec);
+  virtual il::Array<double> ConvertToLocal(il::ArrayView<double> global_vec) const {
+      IL_EXPECT_FAST(this->rotation_matrix_.size(1) == global_vec.size());
+      il::Array<double> y{this->rotation_matrix_.size(0)};
+      il::blas(1.0, this->rotation_matrix_.view(), global_vec, 0.0, il::io, y.Edit());
+      return y;
   }
-  virtual il::Array<double> ConvertToGlobal(const il::Array<double>& local_vec) const {
-    return il::dot(this->rotation_matrix_t_, local_vec);
+  virtual il::Array<double> ConvertToGlobal(il::ArrayView<double> local_vec) const {
+      IL_EXPECT_FAST(this->rotation_matrix_t_.size(1) == local_vec.size());
+      il::Array<double> y{this->rotation_matrix_t_.size(0)};
+      il::blas(1.0, this->rotation_matrix_t_.view(), local_vec, 0.0, il::io, y.Edit());
+      return y;
   }
 
   // implement here rotation and rotation matrix transform here

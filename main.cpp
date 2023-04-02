@@ -10,7 +10,7 @@
 #include <iostream>
 #include <string>
 
-#include "bigwham_io.h"
+#include "io/bigwham_io_gen.h"
 
 /////////////////////////////////////////////////////////////////////////////////
 int main() {

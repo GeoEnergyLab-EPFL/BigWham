@@ -62,7 +62,7 @@ BieElastostatic<Triangle<0>, Triangle<0>, ElasticKernelType::H>::influence(
 
   // normal vector at the receiver location in the reference system of the
   // source element
-  auto nr = source_elt.ConvertToLocal(receiver_elt.normal());
+  auto nr = source_elt.ConvertToLocal(receiver_elt.normal().view());
 
   // compute traction vectors at receiver element cp due to (DD1,DD2,DD3) source
   // element in the reference system of the source element
@@ -89,10 +89,10 @@ BieElastostatic<Triangle<0>, Triangle<0>, ElasticKernelType::H>::influence(
     // compute temporary traction vector
     traction_temp = il::dot(sigma_temp, nr);
     // convert to global from local src element coordinate system
-    auto traction_temp_global = source_elt.ConvertToGlobal(traction_temp);
+    auto traction_temp_global = source_elt.ConvertToGlobal(traction_temp.view());
     // convert to local rec element coordinate system
     auto traction_temp_local_rec =
-        receiver_elt.ConvertToLocal(traction_temp_global);
+        receiver_elt.ConvertToLocal(traction_temp_global.view());
 
     for (int j = 0; j < 3; ++j) {
       // fill the traction vectors at receiver element cp due to (DD1,DD2,DD3)
