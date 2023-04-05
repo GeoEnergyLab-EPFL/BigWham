@@ -152,7 +152,7 @@ bool Tree<T, n>::hasChild(il::spot_t s, il::int_t i) const {
 template <typename T, il::int_t n>
 void Tree<T, n>::AddChild(il::spot_t s, il::int_t i) {
   const il::int_t k = tree_.size();
-  tree_.Resize(k + 1);
+  tree_.Append({});
   tree_[s.index].children[i] = k;
 };
 
