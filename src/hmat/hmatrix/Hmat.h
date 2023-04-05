@@ -25,19 +25,19 @@
 #include "hmat/compression/adaptiveCrossApproximation.h"
 #include "hmat/arrayFunctor/MatrixGenerator.h"
 
-#include <omp.h>
 #include <vector>
 #include <cmath>
 #include <numeric>
 #include <string>
+#include <type_traits>
 
 #if defined(BIGWHAM_HDF5)
 #include "hdf5.h"
 #endif
 
-// #if defined(HAS_ITT)
-// #include <ittnotify.h>
-// #endif
+#if defined(HAS_ITT)
+#include <ittnotify.h>
+#endif
 
 #include <vector>
 
@@ -49,7 +49,7 @@ class Hmat {
 // construction from the pattern built from the block cluster tree
 // openmp parallel construction
 // openmp parallel mat_vect dot product (non-permutted way)
- private:
+private:
 
   bie::HPattern pattern_;
 
@@ -58,16 +58,30 @@ class Hmat {
   il::int_t dof_dimension_; //  dof per collocation points
   il::StaticArray<il::int_t,2> size_; // size of tot mat (row, cols)
 
-  std::vector<std::unique_ptr<bie::LowRank<T>>> low_rank_blocks_; // vector of low rank blocks
-  std::vector<std::unique_ptr<il::Array2D<T>>>  full_rank_blocks_; // vector of full rank blocks
+  std::vector<std::unique_ptr<bie::LowRank<T>>> low_rank_blocks_;  // vector of low rank blocks
+  std::vector<std::unique_ptr<il::Array2D<T>>>  full_rank_blocks_;  // vector of full rank blocks
 
-  bool isBuilt_= false;
-  bool isBuilt_LR_=false;
-  bool isBuilt_FR_=false;
+#if defined(IL_OPENMP)
+  int frb_chunk_size_{1};
+  int lrb_chunk_size_{1};
+#endif
 
-  bool is_square_=true;
+  bool isBuilt_{false};
+  bool isBuilt_LR_{false};
+  bool isBuilt_FR_{false};
+  bool is_square_{true};
 
-  public:
+#if defined(HAS_ITT)
+  static __itt_domain* itt_domain;
+  static __itt_string_handle* itt_task_build;
+  static __itt_string_handle* itt_task_buildfrb;
+  static __itt_string_handle* itt_task_buildlrb;
+  static __itt_string_handle* itt_task_matvec;
+  static __itt_string_handle* itt_task_matvec_frb;
+  static __itt_string_handle* itt_task_matvec_lrb;
+#endif
+
+public:
 
    Hmat()= default;
    ~Hmat()= default;
@@ -138,7 +152,7 @@ class Hmat {
     };
 
     auto writeArray2D = [](auto && name, auto && gid, auto && array) {
-      hsize_t dims[2] = {array.size(0), array.size(1)};
+      hsize_t dims[2]{hsize_t(array.size(0)), hsize_t(array.size(1))}; // explicit conversion to avoid the compiler warning
       auto dataspace_id = H5Screate_simple(2, dims, NULL);
       auto dataset_id = H5Dcreate(gid, std::string(name).c_str(), H5T_NATIVE_DOUBLE, dataspace_id,
                                   H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
@@ -220,25 +234,29 @@ class Hmat {
     H5Gclose(pattern_gid);
 
     std::cout << "Reading HMat from \"" << filename << "\" - " << size_[0] << "x" << size_[1] << " - " << dof_dimension_  << std::endl;
-
     std::cout << " Number of blocks = " << pattern_.n_FRB + pattern_.n_LRB  << std::endl;
-
     std::cout << " Number of full blocks = " << pattern_.n_FRB  << std::endl;
+
     auto frbs_gid = H5Gopen(hmat_gid, "FRB", H5P_DEFAULT);
     full_rank_blocks_.resize(pattern_.n_FRB);
     il::int_t i_frb = 0;
+    il::int_t i_frb_10_per = pattern_.n_FRB * 0.1;
     for(auto && frb : full_rank_blocks_) {
+      if(i_frb % i_frb_10_per == 0) std::cout <<"." << std::flush;
       frb = std::make_unique<il::Array2D<T>>();
       readArray2D("frb_" + std::to_string(i_frb), frbs_gid, *frb);
       ++i_frb;
     }
+    std::cout << std::endl;
     H5Gclose(frbs_gid);
 
     std::cout << " Number of low rank blocks = " << pattern_.n_LRB  << std::endl;
     auto lrbs_gid = H5Gopen(hmat_gid, "LRB", H5P_DEFAULT);
     low_rank_blocks_.resize(pattern_.n_LRB);
     il::int_t i_lrb = 0;
+    il::int_t i_lrb_10_per = pattern_.n_LRB * 0.1;
     for(auto && lrb : low_rank_blocks_) {
+      if(i_lrb % i_lrb_10_per == 0) std::cout <<"." << std::flush;
       lrb = std::make_unique<LowRank<T>>();
       std::string group = "lrb_" + std::to_string(i_lrb);
       auto lrb_gid = H5Gopen(lrbs_gid, group.c_str(), H5P_DEFAULT);
@@ -247,6 +265,7 @@ class Hmat {
       H5Gclose(lrb_gid);
       ++i_lrb;
     }
+    std::cout << std::endl;
     H5Gclose(lrbs_gid);
 
     H5Gclose(hmat_gid);
@@ -264,15 +283,7 @@ class Hmat {
     std::cout << " N full blocks "<< pattern_.n_FRB << " \n";
 
     full_rank_blocks_.resize(pattern_.n_FRB);
-#pragma omp parallel
-    {
-      std::vector<std::unique_ptr<il::Array2D<T>>> private_full_rank_blocks;
-
-#if defined(_OPENMP)
-      auto nthreads = omp_get_num_threads();
-      int chunk_size = std::max(1, int(pattern_.n_FRB / nthreads / 100));
-#endif
-#pragma omp for nowait schedule(static,chunk_size)
+#pragma omp parallel for schedule(static, frb_chunk_size_)
       for (il::int_t i = 0; i < pattern_.n_FRB; i++) {
         il::int_t i0 = pattern_.FRB_pattern(1, i);
         il::int_t j0 = pattern_.FRB_pattern(2, i);
@@ -282,7 +293,7 @@ class Hmat {
         const il::int_t ni = matrix_gen.blockSize() * (iend - i0);
         const il::int_t nj = matrix_gen.blockSize() * (jend - j0);
 
-        std::unique_ptr<il::Array2D<T>> a =std::make_unique<il::Array2D<T>>  (ni, nj);
+        std::unique_ptr<il::Array2D<T>> a = std::make_unique<il::Array2D<T>>  (ni, nj);
         matrix_gen.set(i0, j0, il::io, a->Edit());
         full_rank_blocks_[i] = std::move(a);
       }
@@ -303,54 +314,69 @@ class Hmat {
 #if defined(_OPENMP)
     auto nthreads = omp_get_max_threads();
 #endif
-
     low_rank_blocks_.resize(pattern_.n_LRB);
-#pragma omp parallel
-    {
 
-#if defined(_OPENMP)
-      int chunk_size = std::max(1, int(pattern_.n_LRB / nthreads / 100));
-#endif
-
-#pragma omp for nowait schedule(static, chunk_size)
+    auto buildLRByDim = [&](auto && intergral_dim) {
+      constexpr il::int_t dim = std::decay_t<decltype(intergral_dim)>::value;
+#pragma omp parallel for schedule(static, lrb_chunk_size_)
       for (il::int_t i = 0; i < pattern_.n_LRB; i++) {
         il::int_t i0 = pattern_.LRB_pattern(1, i);
         il::int_t j0 = pattern_.LRB_pattern(2, i);
         il::int_t iend = pattern_.LRB_pattern(3, i);
         il::int_t jend = pattern_.LRB_pattern(4, i);
-        il::Range range0{i0, iend}, range1{j0, jend};
+        il::Range range0{i0, iend};
+        il::Range range1{j0, jend};
 
-        // we need a LRA generator virtual template similar to the Matrix generator...
+        // we need 7a LRA generator virtual template similar to the Matrix generator...
         // here we have an if condition for the LRA call dependent on dof_dimension_
-        bie::LowRank<T> lra;
-        if (matrix_gen.blockSize()==1){
-          lra = bie::adaptiveCrossApproximation<1>(matrix_gen, range0, range1, epsilon);
-        } else if (matrix_gen.blockSize()==2){
-          lra = bie::adaptiveCrossApproximation<2>(matrix_gen, range0, range1, epsilon);
-        } else if (matrix_gen.blockSize()==3){
-          lra = bie::adaptiveCrossApproximation<3>(matrix_gen, range0, range1, epsilon);
-        } else {
-          IL_UNREACHABLE;
-        }
-        //std::unique_ptr<bie::LowRank<T>> lra_p( new bie::LowRank<T>( std::move(lra) ) );
+        auto lra = bie::adaptiveCrossApproximation<dim>(matrix_gen, range0, range1, epsilon);
 
         // store the rank in the low_rank pattern
-        pattern_.LRB_pattern(5, i) = lra.A.size(1);
-        low_rank_blocks_[i] = std::make_unique<bie::LowRank<T>>(lra); // lra_p does not exist after such call
+        pattern_.LRB_pattern(5, i) = lra->A.size(1);
+        low_rank_blocks_[i] = std::move(lra); // lra_p does not exist after such call
       }
+    };
+
+    switch(matrix_gen.blockSize()) {
+    case 1:
+      buildLRByDim(std::integral_constant<int, 1>{});
+      break;
+    case 2:
+      buildLRByDim(std::integral_constant<int, 2>{});
+      break;
+    case 3:
+      buildLRByDim(std::integral_constant<int, 3>{});
+      break;
     }
     isBuilt_LR_=true;
   }
-
   //-----------------------------------------------------------------------------
   // filling up the h-matrix sub-blocks
   void build(const bie::MatrixGenerator<T>& matrix_gen,const double epsilon){
+// #if defined(HAS_ITT)
+//     __itt_task_begin(itt_domain, __itt_null, __itt_null, itt_task_build);
+// #endif
+
     dof_dimension_ =matrix_gen.blockSize();
     size_[0]=matrix_gen.size(0);
     size_[1]=matrix_gen.size(1);
+#if defined(HAS_ITT)
+    __itt_task_begin(itt_domain, __itt_null, __itt_null, itt_task_buildfrb);
+#endif
     buildFR(matrix_gen);
+#if defined(HAS_ITT)
+    __itt_task_end(itt_domain);
+    __itt_task_begin(itt_domain, __itt_null, __itt_null, itt_task_buildlrb);
+#endif
     buildLR(matrix_gen,epsilon);
+#if defined(HAS_ITT)
+    __itt_task_end(itt_domain);
+#endif
+
     isBuilt_= isBuilt_FR_ && isBuilt_LR_;
+// #if defined(HAS_ITT)
+//     __itt_task_end(itt_domain);
+// #endif
   }
   //-----------------------------------------------------------------------------
   bool isBuilt() const {return isBuilt_;};
@@ -389,6 +415,10 @@ class Hmat {
   // in - il:Array<T>
   // out - il:Array<T>
   il::Array<T> matvec(const il::Array<T> & x){
+#if defined(HAS_ITT)
+    __itt_frame_begin_v3(itt_domain, nullptr);
+#endif
+
     IL_EXPECT_FAST(x.size()==size_[1]);
     il::Array<T> y{size_[0], 0.};
 
@@ -413,17 +443,11 @@ class Hmat {
 #else
       il::ArrayEdit<T> yprivate = y.Edit();
 #endif
-
-#if defined(_OPENMP)
-      static bool first_time = true;
-      int chunk_size = std::max(1, int(pattern_.n_FRB / nthreads / 100));
-#pragma omp single
-      if (first_time) {
-        std::printf("  FRB - chunk size: %d\n", chunk_size);
-      }
+#if defined(HAS_ITT)
+      __itt_task_begin(itt_domain, __itt_null, __itt_null, itt_task_matvec_frb);
 #endif
 
-#pragma omp for nowait schedule(static, chunk_size)
+#pragma omp for nowait schedule(static, frb_chunk_size_)
       for (il::int_t i = 0; i < pattern_.n_FRB; i++) {
           il::int_t i0=pattern_.FRB_pattern(1,i);
           il::int_t j0=pattern_.FRB_pattern(2,i);
@@ -437,16 +461,12 @@ class Hmat {
           il::blas(1.0, a, xs, 1.0, il::io, ys);
       }
 
-#if defined(_OPENMP)
-      chunk_size = std::max(1, int(pattern_.n_LRB / nthreads/ 100));
-#pragma omp single
-      if (first_time) {
-        std::printf("  LRB - chunk size: %d\n", chunk_size);
-        first_time = false;
-      }
+#if defined(HAS_ITT)
+      __itt_task_end(itt_domain);
+      __itt_task_begin(itt_domain, __itt_null, __itt_null, itt_task_matvec_lrb);
 #endif
 
-#pragma omp for nowait schedule(static, chunk_size)
+#pragma omp for nowait schedule(static, lrb_chunk_size_)
       for (il::int_t ii = 0; ii < pattern_.n_LRB; ii++) {
         auto i0 = pattern_.LRB_pattern(1, ii);
         auto j0 = pattern_.LRB_pattern(2, ii);
@@ -466,6 +486,9 @@ class Hmat {
         il::blas(1.0, a, tmp.view(), 1.0, il::io, ys);
       }
 
+#if defined(HAS_ITT)
+      __itt_task_end(itt_domain);
+#endif
 #if defined(_OPENMP)
       il::int_t j = 0;
 #pragma omp for schedule(static)
@@ -478,6 +501,9 @@ class Hmat {
 #endif
     }
 
+#if defined(HAS_ITT)
+    __itt_frame_end_v3(itt_domain, nullptr);
+#endif
     return y;
   }
 
@@ -617,6 +643,23 @@ class Hmat {
               << " n^2 " << (this->size_[0]) * (this->size_[1]) << "\n";
   }
 };
+
+#if defined(HAS_ITT)
+template<class T>
+__itt_domain* Hmat<T>::itt_domain = __itt_domain_create("HMat");
+template<class T>
+__itt_string_handle* Hmat<T>::itt_task_build = __itt_string_handle_create("Build.Build");
+template<class T>
+__itt_string_handle* Hmat<T>::itt_task_buildfrb = __itt_string_handle_create("Build.BuildFRB");
+template<class T>
+__itt_string_handle* Hmat<T>::itt_task_buildlrb = __itt_string_handle_create("Build.BuildLRB");
+template<class T>
+__itt_string_handle* Hmat<T>::itt_task_matvec = __itt_string_handle_create("MatVec");
+template<class T>
+__itt_string_handle* Hmat<T>::itt_task_matvec_frb = __itt_string_handle_create("MatVec.FRB");
+template<class T>
+__itt_string_handle* Hmat<T>::itt_task_matvec_lrb = __itt_string_handle_create("MatVec.LRB");
+#endif
 
 }
 #endif

@@ -18,16 +18,21 @@
 namespace bie {
 
 template <il::int_t p, typename T>
-LowRank<T> adaptiveCrossApproximation(const bie::MatrixGenerator<T>& M,
-                                      il::Range range0, il::Range range1,
-                                      double epsilon) {
+std::unique_ptr<LowRank<T>> adaptiveCrossApproximation(const bie::MatrixGenerator<T>& M,
+                                                       il::Range range0, il::Range range1,
+                                                       double epsilon) {
   const il::int_t n0 = range0.end - range0.begin;
   const il::int_t n1 = range1.end - range1.begin;
 
-  il::Array2D<T> A{n0 * p, 0};
-  il::Array2D<T> B{0, n1 * p};
-  A.Reserve(n0*p,20);
-  B.Reserve(20,n1 * p);
+  auto lrb = std::make_unique<LowRank<T>>();
+
+  auto & A = lrb->A;
+  auto & B = lrb->B;
+  A.Resize(n0 * p, 0);
+  B.Resize(0, n1 * p);
+
+  A.Reserve(n0*p, 20);
+  B.Reserve(20, n1 * p);
 
   il::Array<il::int_t> i0_used{};
   il::Array<il::int_t> i1_used{};
@@ -190,7 +195,7 @@ LowRank<T> adaptiveCrossApproximation(const bie::MatrixGenerator<T>& M,
   //  std::cout << "Relative Error: " << frobenius_norm_difference /
   //  frobenius_norm_matrix << std::endl;
 
-  return bie::LowRank<T>{std::move(A), std::move(B)};
+  return std::move(lrb);
 }
 
 }  // namespace il
