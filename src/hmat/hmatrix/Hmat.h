@@ -284,21 +284,20 @@ public:
 
     full_rank_blocks_.resize(pattern_.n_FRB);
 #pragma omp parallel for schedule(static, frb_chunk_size_)
-      for (il::int_t i = 0; i < pattern_.n_FRB; i++) {
-        il::int_t i0 = pattern_.FRB_pattern(1, i);
-        il::int_t j0 = pattern_.FRB_pattern(2, i);
-        il::int_t iend = pattern_.FRB_pattern(3, i);
-        il::int_t jend = pattern_.FRB_pattern(4, i);
+    for (il::int_t i = 0; i < pattern_.n_FRB; i++) {
+      il::int_t i0 = pattern_.FRB_pattern(1, i);
+      il::int_t j0 = pattern_.FRB_pattern(2, i);
+      il::int_t iend = pattern_.FRB_pattern(3, i);
+      il::int_t jend = pattern_.FRB_pattern(4, i);
 
-        const il::int_t ni = matrix_gen.blockSize() * (iend - i0);
-        const il::int_t nj = matrix_gen.blockSize() * (jend - j0);
+      const il::int_t ni = matrix_gen.blockSize() * (iend - i0);
+      const il::int_t nj = matrix_gen.blockSize() * (jend - j0);
 
-        std::unique_ptr<il::Array2D<T>> a = std::make_unique<il::Array2D<T>>  (ni, nj);
-        matrix_gen.set(i0, j0, il::io, a->Edit());
-        full_rank_blocks_[i] = std::move(a);
-      }
+      std::unique_ptr<il::Array2D<T>> a = std::make_unique<il::Array2D<T>>  (ni, nj);
+      matrix_gen.set(i0, j0, il::io, a->Edit());
+      full_rank_blocks_[i] = std::move(a);
     }
-    isBuilt_FR_=true;
+    isBuilt_FR_ = true;
   }
 ////////////////////////////////////////////////////////////////////////////////
 ///
