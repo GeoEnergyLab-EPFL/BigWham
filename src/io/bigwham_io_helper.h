@@ -30,10 +30,10 @@ inline constexpr auto operator"" _sh(const char *str, size_t len) {
 /* -------------------------------------------------------------------------- */
 
 template <class El>
-std::shared_ptr<Mesh> createMeshFromVect(int spatial_dimension,
+std::shared_ptr<Mesh> CreateMeshFromVect(int spatial_dimension,
                                          int n_vertex_elt,
-                                         const std::vector<double> &coor,
-                                         const std::vector<int> &conn) {
+                                         il::ArrayView<double> coor,
+                                         il::ArrayView<int> conn) {
   il::int_t npoints = coor.size() / spatial_dimension;
   il::int_t nelts = conn.size() / spatial_dimension;
   il::Array2D<double> Coor{npoints, spatial_dimension, 0.}; //

@@ -26,10 +26,10 @@ void BigWhamIOGen::Set(
     spatial_dimension_ = 2;
     using src_elem = Segment<0>;
     using rec_elem = Point<2>;
-    mesh_src_ = createMeshFromVect<src_elem>(
-        spatial_dimension_, /* num vertices */ 2, coor_src, conn_src);
-    mesh_rec_ = createMeshFromVect<rec_elem>(
-        spatial_dimension_, /* num vertices */ 1, coor_src, conn_src);
+    mesh_src_ = CreateMeshFromVect<src_elem>(
+            spatial_dimension_, /* num vertices */ 2, coor_src, conn_src);
+    mesh_rec_ = CreateMeshFromVect<rec_elem>(
+            spatial_dimension_, /* num vertices */ 1, coor_src, conn_src);
     ker_obj_ = std::make_shared<
         BieElastostatic<src_elem, rec_elem, ElasticKernelType::T>>(
         elas, spatial_dimension_);
@@ -71,10 +71,10 @@ void BigWhamIOGen::Set(
 
 // for square matrix
 // coor and conn are assumed to be passed in row-major storage format
-void BigWhamIOGen::SetSelf(const std::vector<double> &coor,
-                           const std::vector<int> &conn,
+void BigWhamIOGen::SetSelf(il::ArrayView<double> coor,
+                           il::ArrayView<long> conn,
                            const std::string &kernel,
-                           const std::vector<double> &properties,
+                           il::ArrayView<double> properties,
                            const int max_leaf_size, const double eta,
                            const double eps_aca) {
   this->kernel_name_ = kernel;
@@ -97,7 +97,7 @@ void BigWhamIOGen::SetSelf(const std::vector<double> &coor,
     spatial_dimension_ = 2;
     int nvertices_per_elt_ = 2;
     using EltType = Segment<0>;
-    mesh_ = createMeshFromVect<EltType>(spatial_dimension_, nvertices_per_elt_,
+    mesh_ = CreateMeshFromVect<EltType>(spatial_dimension_, nvertices_per_elt_,
                                         coor, conn);
     ker_obj_ = std::make_shared<
         bie::BieElastostatic<EltType, EltType, bie::ElasticKernelType::H>>(
@@ -108,7 +108,7 @@ void BigWhamIOGen::SetSelf(const std::vector<double> &coor,
     spatial_dimension_ = 2;
     int nvertices_per_elt_ = 2;
     using EltType = bie::Segment<0>;
-    mesh_ = createMeshFromVect<EltType>(spatial_dimension_, nvertices_per_elt_,
+    mesh_ = CreateMeshFromVect<EltType>(spatial_dimension_, nvertices_per_elt_,
                                         coor, conn);
     ker_obj_ = std::make_shared<
         bie::BieElastostaticSp3d<EltType, EltType, bie::ElasticKernelType::H>>(
@@ -122,7 +122,7 @@ void BigWhamIOGen::SetSelf(const std::vector<double> &coor,
     spatial_dimension_ = 2;
     int nvertices_per_elt_ = 2;
     using EltType = bie::Segment<1>;
-    mesh_ = createMeshFromVect<EltType>(spatial_dimension_, nvertices_per_elt_,
+    mesh_ = CreateMeshFromVect<EltType>(spatial_dimension_, nvertices_per_elt_,
                                         coor, conn);
     ker_obj_ = std::make_shared<
         bie::BieElastostatic<EltType, EltType, bie::ElasticKernelType::H>>(
@@ -133,7 +133,7 @@ void BigWhamIOGen::SetSelf(const std::vector<double> &coor,
     spatial_dimension_ = 3;
     int nvertices_per_elt_ = 3;
     using EltType = bie::Triangle<0>;
-    mesh_ = createMeshFromVect<EltType>(spatial_dimension_, nvertices_per_elt_,
+    mesh_ = CreateMeshFromVect<EltType>(spatial_dimension_, nvertices_per_elt_,
                                         coor, conn);
     ker_obj_ = std::make_shared<
         bie::BieElastostatic<EltType, EltType, bie::ElasticKernelType::H>>(
@@ -144,7 +144,7 @@ void BigWhamIOGen::SetSelf(const std::vector<double> &coor,
     spatial_dimension_ = 2;
     int nvertices_per_elt_ = 2;
     using EltType = bie::Segment<0>;
-    mesh_ = createMeshFromVect<EltType>(spatial_dimension_, nvertices_per_elt_,
+    mesh_ = CreateMeshFromVect<EltType>(spatial_dimension_, nvertices_per_elt_,
                                         coor, conn);
     ker_obj_ = std::make_shared<bie::ElasticAxiSymmRingKernel>(
         elas, spatial_dimension_);
@@ -304,7 +304,7 @@ il::Array<double>
 BigWhamIOGen::ConvertToLocal(il::ArrayView<double> x_global) const {
   // Input: x in original state (not permutted)
   // Output: in original state (not permutted)
-  return mesh_->ConvertToLocal(x_global.view());
+  return mesh_->ConvertToLocal(x_global);
 }
 /* -------------------------------------------------------------------------- */
 

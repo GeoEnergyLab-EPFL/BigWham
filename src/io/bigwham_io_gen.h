@@ -59,8 +59,8 @@ public:
   ~BigWhamIOGen() {}
 
   // square matrices
-  void SetSelf(const std::vector<double> &coor, const std::vector<int> &conn,
-               const std::string &kernel, const std::vector<double> &properties,
+  void SetSelf(il::ArrayView<double> coor, il::ArrayView<long> conn,
+               const std::string &kernel, il::ArrayView<double> properties,
                const int max_leaf_size, const double eta, const double eps_aca);
 
   // rectangular matrices
