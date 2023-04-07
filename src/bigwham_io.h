@@ -22,7 +22,7 @@
 #include <il/Dynamic.h>
 #include <il/Map.h>
 
-#include <hmat/hmatrix/hmat.h>
+#include <hmat/hmatrix/Hmat.h>
 
 #include "core/be_mesh.h"
 // #include "elements/rectangle.h"

@@ -2,27 +2,31 @@
 # BIGWHAM                           #
 # compilation configuration         #
 #####################################
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.7...3.19)
 
-if(CMAKE_VERSION VERSION_LESS 3.12)
+if(${CMAKE_VERSION} VERSION_LESS 3.12)
     cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
 endif()
 
 project(BigWham VERSION 1.0
         DESCRIPTION "This is the library containing the wheels"
-        LANGUAGES CXX)
+        LANGUAGES CXX C)
 
 # This is only for pybind11 to behave properly
 set(CMAKE_CXX_STANDARD 17)
-
 
 # Set a default build type if none was specified
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   message(STATUS "Setting build type to 'Release' as none was specified.")
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
+
   # Set the possible values of build type for cmake-gui
-  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release"
-    "MinSizeRel" "RelWithDebInfo")
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
+      Release
+      Debug
+      RelWithDebInfo
+      Sanitize
+      )
 endif()
 
 message(STATUS "CMAKE_BUILD_TYPE :  ${CMAKE_BUILD_TYPE}")
@@ -40,20 +44,14 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(BIGWHAM_PYTHON_INTERFACE "Build Pybind11 binding" ON)
 option(BIGWHAM_MATHEMATICA_INTERFACE "make mathematica interface" OFF)  # --> to add static option to CMAKE_CXX_FLAGS
 option(BIGWHAM_TESTING "Build google tests" OFF)
+option(BIGWHAM_PROFILING "Add extra tool for profiling" OFF)
+option(BIGWHAM_HDF5 "Use HDF5 for checkpoint/restart" OFF)
 
-#option(USE_STATIC "use static" OFF)  # --> to add static option to CMAKE_CXX_FLAGS
 
 #####################################
 # optimization options              #
 #####################################
-set(_optimization_flags "-O3 -DNDEBUG")
-if(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
-    set(_optimization_flags "${_optimization_flags} -xHost")
-else()
-    set(_optimization_flags "${_optimization_flags} -march=native")
-endif()
-set(CMAKE_CXX_FLAGS_RELEASE "${_optimization_flags}" CACHE STRING "Flags used by the compiler during release builds" FORCE)
-
+include(ExtraCompilationProfiles)
 
 #if(USE_STATIC)
 #    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static")
@@ -144,6 +142,21 @@ mark_as_advanced(BIGWHAM_INCLUDE_DIRS)
 add_executable(BigWham_exe  main.cpp)
 target_link_libraries(BigWham_exe BigWhamShared)
 include(BigWhamTools)
+
+if (BIGWHAM_PROFILING)
+    find_package(ITT REQUIRED)
+    target_compile_definitions(BigWham PUBLIC HAS_ITT)
+    target_link_libraries(BigWham PUBLIC ${ITT_LIBRARIES})
+    target_include_directories(BigWham PUBLIC ${ITT_INCLUDE_DIRS})
+endif()
+
+
+if(BIGWHAM_HDF5)
+    find_package(HDF5 REQUIRED COMPONENTS C CXX)
+    target_compile_definitions(BigWham PUBLIC BIGWHAM_HDF5)
+    target_link_libraries(BigWham PUBLIC ${HDF5_LIBRARIES})
+    target_include_directories(BigWham PUBLIC ${HDF5_INCLUDE_DIRS})
+endif()
 
 ################################################################
 # Pybind --->use with PYTHON version >=3.7

@@ -173,6 +173,67 @@ class Array2D {
   */
   il::int_t size(il::int_t d) const;
 
+  class const_iterator {
+   private:
+    const T* data{nullptr};
+    il::int_t n0{0};
+
+   public:
+    const_iterator(const T* data, il::int_t n0) : data(data), n0(n0){};
+    const_iterator& operator++() {
+      data += n0;
+      return *this;
+    }
+
+    const_iterator& operator++(int) {
+      const_iterator tmp(*this);
+      ++(*this);
+      return tmp;
+    }
+
+    ArrayView<T> operator[](int i) const {
+      return ArrayView(data + i * n0, n0);
+    }
+    const_iterator operator+(int i) const {
+      return const_iterator(data + i * n0, n0);
+    }
+    const_iterator operator-(int i) const {
+      return const_iterator(data - i * n0, n0);
+    }
+
+    ArrayView<T> operator*() const { return ArrayView(data, n0); }
+    bool operator==(const const_iterator& other) const {
+      return (data == other.data and n0 == other.n0);
+    }
+    bool operator!=(const const_iterator& other) const {
+      return (not this->operator==(other));
+    }
+
+    bool operator<(const const_iterator& other) const {
+      return (data < other.data);
+    }
+    bool operator<=(const const_iterator& other) const {
+      return (data <= other.data);
+    }
+    bool operator>(const const_iterator& other) const {
+      return (data > other.data);
+    }
+    bool operator>=(const const_iterator& other) const {
+      return (data >= other.data);
+    }
+  };
+
+  //  iterator begin();
+  // iterator end();
+  const_iterator begin() const { return const_iterator(data_, size_[0]); }
+  const_iterator end() const {
+    return const_iterator(data_ + size_[0] * size_[1], size_[0]);
+  }
+  const_iterator cbegin() const { return const_iterator(data_, size_[0]); }
+  const_iterator cend() const {
+    return const_iterator(data_ + size_[0] * size_[1], size_[0]);
+  }
+
   /* \brief Resizing an il::Array2D<T>
   // \details No reallocation is performed if the new size is <= to the
   // capacity for both rows and columns. In this case, the capacity is
@@ -1321,7 +1382,8 @@ il::Array2DEdit<T> Array2D<T>::Edit(il::Range range0, il::Range range1) {
 
 template <typename T>
 il::ArrayEdit<T> Array2D<T>::Edit(il::Range range0, il::int_t i1) {
-  return il::ArrayEdit<T>{data() + i1 * stride(1) + range0.begin,
+  const il::int_t the_stride = stride(1);
+  return il::ArrayEdit<T>{data_ + i1 * the_stride + range0.begin,
                           range0.end - range0.begin};
 }
 

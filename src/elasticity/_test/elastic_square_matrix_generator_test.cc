@@ -15,7 +15,7 @@
 
 #include "hmat/bie_matrix_generator.h"
 #include "hmat/hierarchical_representation.h"
-#include "hmat/hmatrix/hmat.h"
+#include "hmat/hmatrix/Hmat.h"
 #include "hmat/square_matrix_generator.h"
 
 #include "core/be_mesh.h"
@@ -150,26 +150,26 @@ TEST(SquareMatGen, segment_0_Hmat_2) {
                                             bie::ElasticKernelType::H>>(
           elas, coor.size(1));
   il::int_t max_leaf_size = 32;
-  double eta = 2.0;
+  double eta = 1.0;
   auto hr = bie::HRepresentationSquareMatrix(my_mesh, max_leaf_size, eta);
   bie::SquareMatrixGenerator<double> M(my_mesh, ker, hr);
   double eps_aca = 1.e-3;
-  bie::Hmat<double> h_(M, eps_aca);
+  bie::Hmat<double> hmat(M, eps_aca);
   // simple opening mode...
-  il::Array<double> x{M.size(1), 0.0}, y{M.size(1), 0.0};
+  il::Array<double> x{M.size(1), 0.0}, y{M.size(0), 0.0};
   for (il::int_t i = 0; i < M.sizeAsBlocks(0); i++) {
-    x[2 * hr->permutation_0_[i] + 1] =
+    x[2 * hr->permutation_1_[i] + 1] =
         4.0 * sqrt(L * L - xcol(i, 0) * xcol(i, 0));
   }
-  y = h_.matvec(x);
+  y = hmat.matvec(x);
   il::Array<double> rel_err{M.sizeAsBlocks(0), 0.};
   for (il::int_t i = 0; i < M.sizeAsBlocks(0); i++) {
-    rel_err[i] = sqrt((y[2 * i + 1] - 1.) * (y[2 * i + 1] - 1.));
-    // std::cout << "rel x: " << rel_err[i] << "\n";
+    rel_err[i] = sqrt((y[2 * hr->permutation_1_[i] + 1] - 1.) *
+                      (y[2 * hr->permutation_1_[i] + 1] - 1.));
+    std::cout << "rel x: " << rel_err[i] << "\n";
   }
-  // std::cout << "Linf rel error " << il::norm(rel_err,il::Norm::Linf)
-  // << "\n";
-  // std::cout << "L2 rel error " << il::norm(rel_err,il::Norm::L2) <<"\n";
+  std::cout << "Linf rel error " << il::norm(rel_err, il::Norm::Linf) << "\n";
+  std::cout << "L2 rel error " << il::norm(rel_err, il::Norm::L2) << "\n";
   std::cout << "Mean rel error " << il::mean(rel_err) << "\n";
   ASSERT_TRUE(il::mean(rel_err) < 0.05); // h_.isBuilt()
 }

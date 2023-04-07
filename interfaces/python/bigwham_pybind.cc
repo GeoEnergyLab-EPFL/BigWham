@@ -123,7 +123,11 @@ PYBIND11_MODULE(py_bigwham, m) {
                            py::module_local())
       .def(py::init<>()) // constructor
       .def("hmat_destructor", &BigWhamIOGen::HmatrixDestructor)
-      .def("set", &BigWhamIOGen::SetSelf)
+      .def("set",
+           py::overload_cast<const std::vector<double> &,
+                             const std::vector<int> &, const std::string &,
+                             const std::vector<double> &, const int,
+                             const double, const double>(&BigWhamIOGen::Set))
       .def("get_collocation_points", &BigWhamIOGen::GetCollocationPoints)
       .def("get_permutation", &BigWhamIOGen::GetPermutation)
       .def("get_compression_ratio", &BigWhamIOGen::GetCompressionRatio)
@@ -194,9 +198,14 @@ PYBIND11_MODULE(py_bigwham, m) {
   /* --------------------------------------------------------------------------
    */
   py::class_<BigWhamIOGen>(m, "BigWhamIORect", py::dynamic_attr())
-      .def(py::init<>()) 
+      .def(py::init<>())
       .def("hmat_destructor", &BigWhamIOGen::HmatrixDestructor)
-      .def("set", &BigWhamIOGen::Set)
+      .def("set",
+           py::overload_cast<
+               const std::vector<double> &, const std::vector<int> &,
+               const std::vector<double> &, const std::vector<int> &,
+               const std::string &, const std::vector<double> &, const int,
+               const double, const double>(&BigWhamIOGen::Set))
       .def("get_collocation_points", &BigWhamIOGen::GetCollocationPoints)
       .def("get_permutation", &BigWhamIOGen::GetPermutation)
       .def("get_compression_ratio", &BigWhamIOGen::GetCompressionRatio)

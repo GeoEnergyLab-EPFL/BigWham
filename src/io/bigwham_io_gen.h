@@ -8,7 +8,7 @@
 #include "core/elastic_properties.h"
 
 #include "hmat/bie_matrix_generator.h"
-#include "hmat/hmatrix/hmat.h"
+#include "hmat/hmatrix/Hmat.h"
 
 #include "elements/point.h"
 #include "elements/rectangle.h"
@@ -47,7 +47,7 @@ public:
   ~BigWhamIOGen() {}
 
   // square matrices
-  void SetSelf(const std::vector<double> &coor, const std::vector<int> &conn,
+  void Set(const std::vector<double> &coor, const std::vector<int> &conn,
                const std::string &kernel, const std::vector<double> &properties,
                const int max_leaf_size, const double eta, const double eps_aca);
 

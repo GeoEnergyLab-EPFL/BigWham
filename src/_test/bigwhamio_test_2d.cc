@@ -11,7 +11,7 @@
 #include <il/Array2D.h>
 #include <il/math.h>
 
-#include "hmat/hmatrix/hmat.h"
+#include "hmat/hmatrix/Hmat.h"
 #include "bigwham_io.h"
 #include "io/bigwham_io_gen.h"
 
@@ -192,7 +192,7 @@ TEST(bigwham_io_gen_2d, 2DP0_1) {
 
   BigWhamIOGen my_io;
   std::vector<double> properties{1., 0.};
-  my_io.SetSelf(coor, conn, "2DP0", properties, 32, 2, 1.e-3);
+  my_io.Set(coor, conn, "2DP0", properties, 32, 2, 1.e-3);
 
   std::vector<double> x(my_io.MatrixSize(1), 0.);
   for (il::int_t i = 0; i < n_elts; i++) {

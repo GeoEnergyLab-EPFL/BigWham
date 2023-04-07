@@ -8,6 +8,8 @@
 //
 #pragma once
 
+#include <il/core.h>
+
 namespace bie {
 
 enum class HMatrixType { FullRank, LowRank, Hierarchical, FullLu };

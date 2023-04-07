@@ -14,7 +14,7 @@
 //
 #include "hmat/cluster/cluster.h"
 #include "hmat/hierarchical_representation.h"
-#include "hmat/hmatrix/hmat.h"
+#include "hmat/hmatrix/Hmat.h"
 #include "hmat/hmatrix/h_pattern.h"
 
 #include "hmat/arrayFunctor/GaussianMatrix.h"

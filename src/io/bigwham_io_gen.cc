@@ -71,7 +71,7 @@ void BigWhamIOGen::Set(
 
 // for square matrix
 // coor and conn are assumed to be passed in row-major storage format
-void BigWhamIOGen::SetSelf(const std::vector<double> &coor,
+void BigWhamIOGen::Set(const std::vector<double> &coor,
                            const std::vector<int> &conn,
                            const std::string &kernel,
                            const std::vector<double> &properties,
@@ -155,6 +155,10 @@ void BigWhamIOGen::SetSelf(const std::vector<double> &coor,
     il::abort();
   }
   }
+
+  mesh_src_ = mesh_;
+  mesh_rec_ = mesh_;
+
   tt.Start();
   this->hr_ = HRepresentationSquareMatrix(mesh_, max_leaf_size, eta);
   tt.Stop();
