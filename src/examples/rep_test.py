@@ -25,6 +25,7 @@ conn = np.load("mesh_conn.npy")
 kernel = "3DT0"
 hmat = Hmatrix(kernel, coord, conn, np.array([E, nu]), max_leaf_size, eta, eps_aca)
 
+
 col_pts = hmat.getMeshCollocationPoints()
 
 pre_fac = (8 * (1 - nu * nu)) / (np.pi * E)

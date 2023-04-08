@@ -26,7 +26,7 @@ struct HRepresentation {
   il::Array<il::int_t> permutation_0_; // for rows
   il::Array<il::int_t> permutation_1_; // for columns
   bool is_square_ =
-      true; // if true - square matrix, and only permutation_0_ is stored
+      true; // if true - square matrix
 
   HRepresentation() = default;
   ~HRepresentation() = default;

@@ -137,6 +137,7 @@ PYBIND11_MODULE(py_bigwham, m) {
       .def("get_hpattern", &BigWhamIOGen::GetHPattern)
       .def("convert_to_global", &BigWhamIOGen::ConvertToGlobal)
       .def("convert_to_local", &BigWhamIOGen::ConvertToLocal)
+      .def("write_hmatrix", &BigWhamIOGen::WriteHmatrix)
       //.def("hdotProductInPermutted", &BigWhamIOGen::hdotProductInPermutted)
       // I change the previous binding of hdotProductInPermutted to return a
       // numpy array!!

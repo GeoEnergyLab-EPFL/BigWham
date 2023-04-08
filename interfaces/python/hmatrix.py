@@ -122,6 +122,13 @@ class Hmatrix(LinearOperator):
         """
         return self.H_.convert_to_local(x_global)
 
+    def write_hmatrix(self, filename):
+        """
+        write Hmatirx in hdf5
+        """
+        self.H_.write_hmatrix(filename)
+        return 0
+
     def getCollocationPoints(self) -> np.ndarray:
         n = self.H_.get_spatial_dimension()
         aux = np.asarray(self.H_.get_collocation_points())
@@ -157,7 +164,7 @@ class Hmatrix(LinearOperator):
         nr = 6
         return np.reshape(aux, (int(aux.size / nr), nr))
 
-    def plotPattern(self):
+    def plotPattern(self, ax):
         data_pattern = self._getPattern()
 
         patches = []
@@ -171,13 +178,13 @@ class Hmatrix(LinearOperator):
             rectangle = Rectangle((x1, y1), width, height)
             patches.append(rectangle)
             p_colors.append(data_pattern[i, 4])
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
+        # fig = plt.figure()
+        # ax = fig.add_subplot(111)
 
         p = PatchCollection(
             patches, cmap=matplotlib.cm.PiYG, edgecolors="black", alpha=0.4
         )
-        p.set_array(p_colors)
+        p.set_array(np.array(p_colors))
         ax.add_collection(p)
         ax.set_ylim([data_pattern[:, 0].min(), data_pattern[:, 3].max()])
         ax.set_xlim([data_pattern[:, 1].min(), data_pattern[:, 2].max()])
@@ -185,7 +192,7 @@ class Hmatrix(LinearOperator):
         # fig.colorbar(p)
         # fig.show()
         # plt.show(block=True)
-        return fig
+        # return fig
 
     # a method constructing an ILU Preconditionner of the H matrix
     def H_ILU_prec(self, fill_factor=5, drop_tol=1e-5):

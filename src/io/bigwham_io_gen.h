@@ -1,6 +1,11 @@
 #ifndef BIGWHAM_IO_GEN_H
 #define BIGWHAM_IO_GEN_H
 
+#include <memory>
+#ifdef IL_OPENMP
+#include <omp.h>
+#endif
+
 #include <cstdlib>
 
 #include "core/be_mesh.h"
@@ -43,7 +48,15 @@ private:
   std::shared_ptr<BieKernel<double>> ker_obj_;
 
 public:
-  BigWhamIOGen() {}
+  BigWhamIOGen() {
+#ifdef IL_OPENMP
+#pragma omp parallel
+    {
+#pragma omp single
+      std::cout << "NUM OF OMP THREADS: " << omp_get_num_threads() << std::endl;
+    }
+#endif // IL_OPENMP
+  }
   ~BigWhamIOGen() {}
 
   // square matrices
@@ -58,6 +71,14 @@ public:
            const std::vector<int> &conn_rec, const std::string &kernel,
            const std::vector<double> &properties, const int max_leaf_size,
            const double eta, const double eps_aca);
+
+  void Set(const std::string& filename){
+    this->hmat_ = std::make_shared<Hmat<double>>(filename);
+  }
+
+  void WriteHmatrix(const std::string& filename){
+    this->hmat_->writeToFile(filename);
+  }
 
   void HmatDestructor();
   std::vector<double> GetCollocationPoints() const;

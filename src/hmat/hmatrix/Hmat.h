@@ -98,7 +98,7 @@ public:
   /* --------------------------------------------------------------------------
    */
 
-  Hmat(const bie::MatrixGenerator<T> &matrix_gen, double epsilon_aca) {
+  Hmat(const bie::MatrixGenerator<T> &matrix_gen, const double epsilon_aca) {
     this->toHmat(matrix_gen, epsilon_aca);
   }
   /* --------------------------------------------------------------------------
@@ -407,7 +407,9 @@ public:
     }
     isBuilt_LR_ = true;
   }
-  //-----------------------------------------------------------------------------
+  /* --------------------------------------------------------------------------
+   */
+
   // filling up the h-matrix sub-blocks
   void build(const bie::MatrixGenerator<T> &matrix_gen, const double epsilon) {
     // #if defined(HAS_ITT)
@@ -435,18 +437,27 @@ public:
     //     __itt_task_end(itt_domain);
     // #endif
   }
-  //-----------------------------------------------------------------------------
-  bool isBuilt() const { return isBuilt_; };
-  //
-  il::int_t size(int k) const { return size_[k]; };
-  //
+  /* --------------------------------------------------------------------------
+   */
+
+  bool isBuilt() const { return isBuilt_; }
+  /* --------------------------------------------------------------------------
+   */
+
+  il::int_t size(int k) const { return size_[k]; }
+  /* --------------------------------------------------------------------------
+   */
+
   bie::HPattern pattern() {
     return this->hr_->pattern_;
-  }; // returning the Hmat pattern
+  } // returning the Hmat pattern
+  /* --------------------------------------------------------------------------
+   */
 
-  il::int_t dofDimension() const { return dof_dimension_; };
+  il::int_t dofDimension() const { return dof_dimension_; }
+  /* --------------------------------------------------------------------------
+   */
 
-  //-----------------------------------------------------------------------------
   // getting the nb of entries of the hmatrix
   il::int_t nbOfEntries() {
     IL_EXPECT_FAST(isBuilt_);
@@ -462,14 +473,17 @@ public:
     }
     return n;
   }
-  //-----------------------------------------------------------------------------
+  /* --------------------------------------------------------------------------
+   */
+
   // getting the compression ratio of the hmatrix (double which is <=1)
   double compressionRatio() {
     auto nb_elts = static_cast<double>(nbOfEntries());
     return nb_elts / static_cast<double>(size_[0] * size_[1]);
   }
+  /* --------------------------------------------------------------------------
+   */
 
-  //--------------------------------------------------------------------------
   // H-Matrix vector multiplication without permutation
   // in - il:Array<T>
   // out - il:Array<T>
@@ -584,7 +598,8 @@ public:
     il::int_t nrowpoints = this->size(0) / dof_dimension_;
     for (il::int_t i = 0; i < ncolpoints; i++) {
       for (int j = 0; j < dof_dimension_; j++) {
-        z[dof_dimension_ * i + j] = x[dof_dimension_ * hr_->permutation_1_[i] + j];
+        z[dof_dimension_ * i + j] =
+            x[dof_dimension_ * hr_->permutation_1_[i] + j];
       }
     }
     il::Array<T> y = this->matvec(z);
@@ -593,7 +608,8 @@ public:
     // permut back
     for (il::int_t i = 0; i < nrowpoints; i++) {
       for (int j = 0; j < dof_dimension_; j++) {
-        yout[dof_dimension_ * hr_->permutation_0_[i] + j] = y[dof_dimension_ * i + j];
+        yout[dof_dimension_ * hr_->permutation_0_[i] + j] =
+            y[dof_dimension_ * i + j];
       }
     }
     return yout;
