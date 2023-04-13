@@ -10,7 +10,7 @@ endif()
 
 project(BigWham VERSION 1.0
         DESCRIPTION "This is the library containing the wheels"
-        LANGUAGES CXX)
+        LANGUAGES CXX C)
 
 # This is only for pybind11 to behave properly
 set(CMAKE_CXX_STANDARD 17)
