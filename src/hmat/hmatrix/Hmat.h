@@ -303,6 +303,7 @@ public:
 ///
 /// \param matrix_gen
 /// \param epsilon
+  template <il::int_t dim>
   void buildLR(const bie::MatrixGenerator<T>& matrix_gen,const double epsilon){
     // constructing the low rank blocks
     dof_dimension_=matrix_gen.blockSize();
@@ -314,39 +315,24 @@ public:
     auto nthreads = omp_get_max_threads();
 #endif
     low_rank_blocks_.resize(pattern_.n_LRB);
-
-    auto buildLRByDim = [&](auto && intergral_dim) {
-      constexpr il::int_t dim = std::decay_t<decltype(intergral_dim)>::value;
 #pragma omp parallel for schedule(static, lrb_chunk_size_)
-      for (il::int_t i = 0; i < pattern_.n_LRB; i++) {
-        il::int_t i0 = pattern_.LRB_pattern(1, i);
-        il::int_t j0 = pattern_.LRB_pattern(2, i);
-        il::int_t iend = pattern_.LRB_pattern(3, i);
-        il::int_t jend = pattern_.LRB_pattern(4, i);
-        il::Range range0{i0, iend};
-        il::Range range1{j0, jend};
+    for (il::int_t i = 0; i < pattern_.n_LRB; i++) {
+      il::int_t i0 = pattern_.LRB_pattern(1, i);
+      il::int_t j0 = pattern_.LRB_pattern(2, i);
+      il::int_t iend = pattern_.LRB_pattern(3, i);
+      il::int_t jend = pattern_.LRB_pattern(4, i);
+      il::Range range0{i0, iend};
+      il::Range range1{j0, jend};
 
-        // we need 7a LRA generator virtual template similar to the Matrix generator...
-        // here we have an if condition for the LRA call dependent on dof_dimension_
-        auto lra = bie::adaptiveCrossApproximation<dim>(matrix_gen, range0, range1, epsilon);
+      // we need 7a LRA generator virtual template similar to the Matrix generator...
+      // here we have an if condition for the LRA call dependent on dof_dimension_
+      auto lra = bie::adaptiveCrossApproximation<dim>(matrix_gen, range0, range1, epsilon);
 
-        // store the rank in the low_rank pattern
-        pattern_.LRB_pattern(5, i) = lra->A.size(1);
-        low_rank_blocks_[i] = std::move(lra); // lra_p does not exist after such call
-      }
-    };
-
-    switch(matrix_gen.blockSize()) {
-    case 1:
-      buildLRByDim(std::integral_constant<int, 1>{});
-      break;
-    case 2:
-      buildLRByDim(std::integral_constant<int, 2>{});
-      break;
-    case 3:
-      buildLRByDim(std::integral_constant<int, 3>{});
-      break;
+      // store the rank in the low_rank pattern
+      pattern_.LRB_pattern(5, i) = lra->A.size(1);
+      low_rank_blocks_[i] = std::move(lra); // lra_p does not exist after such call
     }
+
     isBuilt_LR_=true;
   }
   //-----------------------------------------------------------------------------
@@ -367,7 +353,19 @@ public:
     __itt_task_end(itt_domain);
     __itt_task_begin(itt_domain, __itt_null, __itt_null, itt_task_buildlrb);
 #endif
-    buildLR(matrix_gen,epsilon);
+
+    switch(matrix_gen.blockSize()) {
+    case 1:
+      buildLR<1>(matrix_gen,epsilon);
+      break;
+    case 2:
+      buildLR<2>(matrix_gen,epsilon);
+      break;
+    case 3:
+      buildLR<3>(matrix_gen,epsilon);
+      break;
+    }
+
 #if defined(HAS_ITT)
     __itt_task_end(itt_domain);
 #endif
@@ -426,11 +424,7 @@ public:
     il::Array2D<T> yprivate_storage{size_[0], nthreads};
 #endif
 
-#if defined(_OPENMP)
-    static bool first_time = true;
-#endif
-
-#pragma omp parallel shared(first_time)
+#pragma omp parallel shared(y)
     {
 #if defined(_OPENMP)
       auto thread_num = omp_get_thread_num();
@@ -488,13 +482,14 @@ public:
 #if defined(HAS_ITT)
       __itt_task_end(itt_domain);
 #endif
+
 #if defined(_OPENMP)
-      il::int_t j = 0;
+      // necessary due to the nowait on the for loop
+#pragma omp barrier
 #pragma omp for schedule(static)
       for (il::int_t j = 0; j < y.size(); j++) {
-        auto yview = yprivate_storage.view(il::Range{j, j+1}, il::Range{0, nthreads});
         for(il::int_t i = 0; i < nthreads; ++i) {
-          y[j] += yview(0, i);
+          y[j] += yprivate_storage(j, i);
         }
       }
 #endif
