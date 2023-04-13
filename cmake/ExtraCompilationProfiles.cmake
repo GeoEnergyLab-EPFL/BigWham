@@ -81,6 +81,16 @@ function(declare_compilation_profile name)
   endforeach()
 endfunction()
 
+set(CMAKE_BUILD_TYPE "Release" CACHE STRING "cmake build type")
+set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
+    Release
+    Debug
+    RelWithDebInfo
+    Sanitize
+    Sanitize_Threads
+    )
+
+
 
 # Profiling
 declare_compilation_profile(PROFILING
@@ -104,6 +114,10 @@ if ((CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION
 
   declare_compilation_profile(SANITIZE
     COMPILER "-g -ggdb3 -DNDEBUG -O2 -fsanitize=address -fsanitize=leak -fsanitize=undefined -fno-omit-frame-pointer${_blacklist}")
+
+  declare_compilation_profile(SANITIZE_THREADS
+    COMPILER "-g -ggdb3 -DNDEBUG -O2 -fsanitize=thread -fno-omit-frame-pointer${_blacklist}")
+
 endif()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
