@@ -155,7 +155,7 @@ TEST(SquareMatGen,segment_0_Hmat_2){
    // std::cout << "Linf rel error " << il::norm(rel_err,il::Norm::Linf) <<"\n";
     //std::cout << "L2 rel error " << il::norm(rel_err,il::Norm::L2) <<"\n";
     std::cout << "Mean rel error " << il::mean(rel_err) <<"\n";
-    ASSERT_TRUE( il::mean(rel_err)<0.05 );//h_.isBuilt()
+    EXPECT_NEAR(il::mean(rel_err), 0., 0.05);//h_.isBuilt()
 }
 
 
