@@ -79,6 +79,7 @@ private:
   static __itt_string_handle* itt_task_matvec;
   static __itt_string_handle* itt_task_matvec_frb;
   static __itt_string_handle* itt_task_matvec_lrb;
+  static __itt_string_handle* itt_task_matvec_reduce;
 #endif
 
 public:
@@ -426,16 +427,7 @@ public:
 
 #pragma omp parallel shared(y)
     {
-#if defined(_OPENMP)
-      auto thread_num = omp_get_thread_num();
-
-      il::ArrayEdit<T> yprivate = yprivate_storage.Edit(il::Range{0, size_[0]}, thread_num);
-      for (il::int_t i = 0; i < size_[0]; ++i) {
-        yprivate[i] = 0.;
-      }
-#else
-      il::ArrayEdit<T> yprivate = y.Edit();
-#endif
+      il::Array<T> yprivate{size_[0], 0.};
 #if defined(HAS_ITT)
       __itt_task_begin(itt_domain, __itt_null, __itt_null, itt_task_matvec_frb);
 #endif
@@ -483,15 +475,13 @@ public:
       __itt_task_end(itt_domain);
 #endif
 
-#if defined(_OPENMP)
-      // necessary due to the nowait on the for loop
-#pragma omp barrier
-#pragma omp for schedule(static)
-      for (il::int_t j = 0; j < y.size(); j++) {
-        for(il::int_t i = 0; i < nthreads; ++i) {
-          y[j] += yprivate_storage(j, i);
-        }
-      }
+#if defined(HAS_ITT)
+      __itt_task_begin(itt_domain, __itt_null, __itt_null, itt_task_matvec_reduce);
+#endif
+#pragma omp critical
+      il::blas(1., yprivate.view(), il::io_t{}, y.Edit());
+#if defined(HAS_ITT)
+      __itt_task_end(itt_domain);
 #endif
     }
 
@@ -653,6 +643,8 @@ template<class T>
 __itt_string_handle* Hmat<T>::itt_task_matvec_frb = __itt_string_handle_create("MatVec.FRB");
 template<class T>
 __itt_string_handle* Hmat<T>::itt_task_matvec_lrb = __itt_string_handle_create("MatVec.LRB");
+template<class T>
+__itt_string_handle* Hmat<T>::itt_task_matvec_reduce = __itt_string_handle_create("MatVec.Reduce");
 #endif
 
 }
