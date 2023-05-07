@@ -41,6 +41,7 @@ option(BIGWHAM_PYTHON_INTERFACE "Build Pybind11 binding" ON)
 option(BIGWHAM_MATHEMATICA_INTERFACE "make mathematica interface" OFF)  # --> to add static option to CMAKE_CXX_FLAGS
 option(BIGWHAM_TESTING "Build google tests" OFF)
 option(BIGWHAM_HDF5 "Use HDF5 for checkpoint/restart" OFF)
+option(BIGWHAM_DOCUMENTATION "Build documentation using doxygen/breathe/sphinx" OFF)
 
 #option(USE_STATIC "use static" OFF)  # --> to add static option to CMAKE_CXX_FLAGS
 
@@ -236,3 +237,12 @@ endif()
 ################################################################################
 # add_library(bigwham_shared SHARED  ${SOURCE_FILES})
 add_subdirectory(src/examples)
+
+
+################################################################################
+# For BigWham Documentation
+################################################################################
+message(STATUS "Building documentation: ${BIGWHAM_DOCUMENTATION}")
+if(BIGWHAM_DOCUMENTATION)
+  add_subdirectory(docs)
+endif()
