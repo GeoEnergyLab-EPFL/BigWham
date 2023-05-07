@@ -1,8 +1,8 @@
 ## All subdirectories editing SOURCE_FILES should named before
 set(SOURCE_FILES ${SOURCE_FILES}
   ## 3D Tri 0 Element
-  ${CMAKE_CURRENT_SOURCE_DIR}/3d/elastic_3dT0_element.cc
-  ${CMAKE_CURRENT_SOURCE_DIR}/3d/bie_elastostatic_triangle_0_impls.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/fullspace_iso_3d/elastic_3dT0_element.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/fullspace_iso_3d/bie_elastostatic_triangle_0_impls.cc
 
   ## 3D Rect 0 Element
   ${CMAKE_CURRENT_SOURCE_DIR}/3d/Elastic3DR0_common.cpp
