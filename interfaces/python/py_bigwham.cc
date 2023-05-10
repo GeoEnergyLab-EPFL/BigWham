@@ -302,15 +302,17 @@ PYBIND11_MODULE(py_bigwham, m) {
                  auto elem = self.GetElement(i);
                  auto num_elem_col_pts = elem->num_collocation_points();
                  auto n = elem->normal();
-                 auto size = elem->size();
+                 auto size = elem->size() / num_elem_col_pts ;
+                 // std::cout << num_elem_col_pts << std::endl;
                  for (int j = 0; j < num_elem_col_pts; ++j) {
                    auto id = i * num_elem_col_pts * dim + j * dim;
-                   eig[0] += size * u[id + 0] * n[0];
-                   eig[1] += size * u[id + 1] * n[1];
-                   eig[2] += size * u[id + 2] * n[2];
-                   eig[3] += size * 0.5 * (u[id + 0] * n[2] + u[id + 2] * n[0]);
-                   eig[4] += size * 0.5 * (u[id + 1] * n[2] + u[id + 2] * n[1]);
-                   eig[5] += size * 0.5 * (u[id + 0] * n[1] + u[id + 1] * n[0]);
+                 // std::cout << id << std::endl;
+                   eig[0] += (size * u[id + 0] * n[0]);
+                   eig[1] += (size * u[id + 1] * n[1]);
+                   eig[2] += (size * u[id + 2] * n[2]);
+                   eig[3] += (size * 0.5 * (u[id + 0] * n[2] + u[id + 2] * n[0]));
+                   eig[4] += (size * 0.5 * (u[id + 1] * n[2] + u[id + 2] * n[1]));
+                   eig[5] += (size * 0.5 * (u[id + 0] * n[1] + u[id + 1] * n[0]));
                  }
                }
              }
@@ -321,7 +323,7 @@ PYBIND11_MODULE(py_bigwham, m) {
                  auto elem = self.GetElement(i);
                  auto num_elem_col_pts = elem->num_collocation_points();
                  auto n = elem->normal();
-                 auto size = elem->size();
+                 auto size = elem->size() / num_elem_col_pts ;
                  for (int j = 0; j < num_elem_col_pts; ++j) {
                    auto id = i * num_elem_col_pts * dim + j * dim;
                    eig[0] += size * u[id + 0] * n[0];
