@@ -35,6 +35,48 @@ void BigWhamIOGen::Set(
         elas, spatial_dimension_);
     break;
   }
+  case "2DS0-2DS0-H"_sh: {
+    // 2D Segment0 and 2D Point
+    spatial_dimension_ = 2;
+    using src_elem = Segment<0>;
+    using rec_elem = Segment<0>;
+    mesh_src_ = createMeshFromVect<src_elem>(
+        spatial_dimension_, /* num vertices */ 2, coor_src, conn_src);
+    mesh_rec_ = createMeshFromVect<rec_elem>(
+        spatial_dimension_, /* num vertices */ 2, coor_rec, conn_rec);
+    ker_obj_ = std::make_shared<
+        BieElastostatic<src_elem, rec_elem, ElasticKernelType::H>>(
+        elas, spatial_dimension_);
+    break;
+  }
+  case "2DS0-2DS0-U"_sh: {
+    // 2D Segment0 and 2D Point
+    spatial_dimension_ = 2;
+    using src_elem = Segment<0>;
+    using rec_elem = Segment<0>;
+    mesh_src_ = createMeshFromVect<src_elem>(
+        spatial_dimension_, /* num vertices */ 2, coor_src, conn_src);
+    mesh_rec_ = createMeshFromVect<rec_elem>(
+        spatial_dimension_, /* num vertices */ 2, coor_rec, conn_rec);
+    ker_obj_ = std::make_shared<
+        BieElastostatic<src_elem, rec_elem, ElasticKernelType::H>>(
+        elas, spatial_dimension_);
+    break;
+  }
+  case "2DS0-2DS0-T"_sh: {
+    // 2D Segment0 and 2D Point
+    spatial_dimension_ = 2;
+    using src_elem = Segment<0>;
+    using rec_elem = Segment<0>;
+    mesh_src_ = createMeshFromVect<src_elem>(
+        spatial_dimension_, /* num vertices */ 2, coor_src, conn_src);
+    mesh_rec_ = createMeshFromVect<rec_elem>(
+        spatial_dimension_, /* num vertices */ 2, coor_rec, conn_rec);
+    ker_obj_ = std::make_shared<
+        BieElastostatic<src_elem, rec_elem, ElasticKernelType::H>>(
+        elas, spatial_dimension_);
+    break;
+  }
   case "2DS0-2DP-T"_sh: {
     // 2D Segment0 and 2D Point
     spatial_dimension_ = 2;
