@@ -29,6 +29,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
+from numpy import ndarray as NDArray
 
 
 ##############################
@@ -36,7 +37,14 @@ from matplotlib.patches import Rectangle
 ##############################
 class Hmatrix(LinearOperator):
     def __init__(
-        self, kernel, coor, conn, properties, max_leaf_size=100, eta=3, eps_aca=1.0e-3
+        self,
+        kernel: str,
+        coor: NDArray[float, 2],
+        conn: NDArray[int, 2],
+        properties: NDArray[float, 1],
+        max_leaf_size: int = 100,
+        eta: float = 3.0,
+        eps_aca: float = 1.0e-3,
     ):
         """ "
         Name:              Type:                Description:
@@ -106,7 +114,7 @@ class Hmatrix(LinearOperator):
     def get_omp_threads(self) -> int:
         return self.H_.get_omp_threads()
 
-    def getMeshCollocationPoints(self) -> np.ndarray:
+    def getMeshCollocationPoints(self) -> NDArray[float, 2]:
         """
         Get collocation points from mesh (no permutations ....)
         return: (no_collo_pts, dim) array from mesh
@@ -116,7 +124,7 @@ class Hmatrix(LinearOperator):
             (self.matvec_size_ // dim, dim)
         )
 
-    def convert_to_global(self, x_local: np.ndarray) -> np.ndarray:
+    def convert_to_global(self, x_local: NDArray[float, 1]) -> NDArray[float, 1]:
         """
         Convert local vector to global vector
         :param x_local: local vector
@@ -124,7 +132,7 @@ class Hmatrix(LinearOperator):
         """
         return self.H_.convert_to_global(x_local)
 
-    def convert_to_local(self, x_global: np.ndarray) -> np.ndarray:
+    def convert_to_local(self, x_global: NDArray[float, 1]) -> NDArray[float, 1]:
         """
         Convert global vector to local vector
         :param x_global: global vector
@@ -132,7 +140,7 @@ class Hmatrix(LinearOperator):
         """
         return self.H_.convert_to_local(x_global)
 
-    def getCollocationPoints(self) -> np.ndarray:
+    def getCollocationPoints(self) -> NDArray[float, 2]:
         n = self.H_.get_spatial_dimension()
         aux = np.asarray(self.H_.get_collocation_points())
         auxpermut = np.reshape(aux, (int(aux.size / n), n))
@@ -144,7 +152,7 @@ class Hmatrix(LinearOperator):
     def getSpatialDimension(self) -> int:
         return self.H_.get_spatial_dimension()
 
-    def _getFullBlocks(self):
+    def _getFullBlocks(self) -> csr_matrix:
         fb = PyGetFullBlocks()  # not fan of this way of creating empty object
         # and setting them after - a constructor should do something!
         fb.set(self.H_)
@@ -198,21 +206,21 @@ class Hmatrix(LinearOperator):
         return fig
 
     # a method constructing an ILU Preconditionner of the H matrix
-    def H_ILU_prec(self, fill_factor=5, drop_tol=1e-5):
+    def H_ILU_prec(self, fill_factor=5, drop_tol=1e-5) -> LinearOperator:
         # fb = self._getFullBlocks()
         fbinv = self.H_ILU(fill_factor=fill_factor, drop_tol=drop_tol)
         return LinearOperator(self.shape_, fbinv.solve)
 
-    def H_ILU(self, fill_factor=5, drop_tol=1e-5):
+    def H_ILU(self, fill_factor=5, drop_tol=1e-5) -> spilu:
         fb = self._getFullBlocks()
         fbILU = spilu(fb, fill_factor=fill_factor, drop_tol=drop_tol)
         return fbILU
 
-    def H_diag(self):
+    def H_diag(self) -> NDArray[float, 1]:
         fb = self._getFullBlocks()
         return fb.diagonal()
 
-    def H_jacobi_prec(self):
+    def H_jacobi_prec(self) -> diags:
         diag = self.H_diag()  # return a nd.array
         overdiag = 1.0 / diag
         return diags(overdiag, dtype=float)
