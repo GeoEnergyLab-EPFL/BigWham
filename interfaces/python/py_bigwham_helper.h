@@ -6,6 +6,8 @@
 #include <pybind11/pybind11.h>
 #include <vector>
 
+#include "elasticity/fullspace_iso_2d_segment/elastic_2dP0_segment.h"
+
 namespace py = pybind11;
 template <typename T>
 using pbarray = py::array_t<T, py::array::c_style | py::array::forcecast>;
@@ -109,4 +111,110 @@ void declare_array(py::module &m, const std::string &typestr) {
         }
         return t1 + t2;
       });
+}
+
+/* --------------------------------------------------------------------------
+ */
+
+/*
+dim : dimension of the problem
+pts : (observation points - source points) flattened
+elem_kernel_type : element type and kernel type, for example "2DS0-H"
+H : stress due to DD
+T : stress due to point force
+*/
+pbarray<double> PyComputeStress(const pbarray<double> &pts,
+                                const std::string &elem_kernel_type,
+                                const double h = 1.0, const double G = 1.0,
+                                const double nu = 0.0) {
+
+  il::Array<double> stress;
+  switch (hash_djb2a(elem_kernel_type)) {
+  case "2DS0-T"_sh: {
+    int dim = 2;
+    int num_pts = pts.size() / dim;
+    stress.Resize(num_pts * dim * 3);
+    int index_pts = 0;
+    int index_stress = 0;
+    for (il::int_t i = 0; i < num_pts; i++) {
+      auto tmp = bie::Se_segment_0(h, G, nu, pts.data()[index_pts],
+                                   pts.data()[index_pts + 1]);
+      // stress due to force in direction 1
+      stress[index_stress] = tmp(0, 0);
+      stress[index_stress + 1] = tmp(0, 1);
+      stress[index_stress + 2] = tmp(0, 2);
+      // stress due to force in direction 2
+      stress[index_stress + 3] = tmp(1, 0);
+      stress[index_stress + 4] = tmp(1, 1);
+      stress[index_stress + 5] = tmp(1, 2);
+      index_pts = index_pts + dim;
+      index_stress = index_stress + dim * 3;
+    }
+    break;
+  }
+  case "2DS0-H"_sh: {
+    int dim = 2;
+    int num_pts = pts.size() / dim;
+    stress.Resize(num_pts * dim * 3);
+    int index_pts = 0;
+    int index_stress = 0;
+    for (il::int_t i = 0; i < num_pts; i++) {
+      auto tmp = bie::We_segment_0(h, G, nu, pts.data()[index_pts],
+                                   pts.data()[index_pts + 1]);
+      // stress due to DD in direction 1 (mode II)
+      stress[index_stress] = tmp(0, 0);
+      stress[index_stress + 1] = tmp(0, 1);
+      stress[index_stress + 2] = tmp(0, 2);
+      // stress due to DD in direction 2 (mode I)
+      stress[index_stress + 3] = tmp(1, 0);
+      stress[index_stress + 4] = tmp(1, 1);
+      stress[index_stress + 5] = tmp(1, 2);
+      index_pts = index_pts + dim;
+      index_stress = index_stress + dim * 3;
+    }
+    break;
+  }
+  }
+  return as_pyarray<double>(std::move(stress));
+}
+
+/* --------------------------------------------------------------------------
+ */
+
+/*
+dim : dimension of the problem
+pts : (observation points - source points) flattened
+elem_kernel_type : element type and kernel type, for example "2DS0-U"
+U : displacement due to point force
+*/
+pbarray<double> PyComputeDisplacement(const pbarray<double> &pts,
+                                      const std::string &elem_kernel_type,
+                                      const double h = 1.0,
+                                      const double G = 1.0,
+                                      const double nu = 0.3) {
+
+  il::Array<double> disp;
+  switch (hash_djb2a(elem_kernel_type)) {
+  case "2DS0-U"_sh: {
+    int dim = 2;
+    int num_pts = pts.size() / dim;
+    disp.Resize(num_pts * dim * 2);
+    int index_pts = 0;
+    int index_disp = 0;
+    for (il::int_t i = 0; i < num_pts; i++) {
+      auto tmp = bie::Ue_segment_0(h, G, nu, pts.data()[index_pts],
+                                   pts.data()[index_pts + 1]);
+      // disp due to force in direction 1
+      disp[index_disp] = tmp(0, 0);
+      disp[index_disp + 1] = tmp(0, 1);
+      // disp due to force in direction 2
+      disp[index_disp + 2] = tmp(1, 0);
+      disp[index_disp + 3] = tmp(1, 1);
+      index_pts = index_pts + dim;
+      index_disp = index_disp + dim * dim;
+    }
+    break;
+  }
+  }
+  return as_pyarray<double>(std::move(disp));
 }

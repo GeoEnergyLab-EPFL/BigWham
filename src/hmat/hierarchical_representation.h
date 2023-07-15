@@ -93,7 +93,7 @@ HRepresentationRectangularMatrix(const std::shared_ptr<Mesh> &source_mesh,
 
   tt.Start();
   Cluster cluster_r = cluster(max_leaf_size, il::io, Xcol_receiver);
-  std::cout << "Cluster tree creation time for the source mesh :  " << tt.time()
+  std::cout << "Cluster tree creation time for the receiver mesh :  " << tt.time()
             << "\n";
   tt.Stop();
   tt.Reset();

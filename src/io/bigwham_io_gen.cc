@@ -59,7 +59,7 @@ void BigWhamIOGen::Set(
     mesh_rec_ = createMeshFromVect<rec_elem>(
         spatial_dimension_, /* num vertices */ 2, coor_rec, conn_rec);
     ker_obj_ = std::make_shared<
-        BieElastostatic<src_elem, rec_elem, ElasticKernelType::H>>(
+        BieElastostatic<src_elem, rec_elem, ElasticKernelType::U>>(
         elas, spatial_dimension_);
     break;
   }
@@ -73,7 +73,7 @@ void BigWhamIOGen::Set(
     mesh_rec_ = createMeshFromVect<rec_elem>(
         spatial_dimension_, /* num vertices */ 2, coor_rec, conn_rec);
     ker_obj_ = std::make_shared<
-        BieElastostatic<src_elem, rec_elem, ElasticKernelType::H>>(
+        BieElastostatic<src_elem, rec_elem, ElasticKernelType::T>>(
         elas, spatial_dimension_);
     break;
   }
@@ -86,6 +86,9 @@ void BigWhamIOGen::Set(
         spatial_dimension_, /* num vertices */ 2, coor_src, conn_src);
     mesh_rec_ = createMeshFromVect<rec_elem>(
         spatial_dimension_, /* num vertices */ 1, coor_rec, conn_rec);
+
+    std::cout << "rec mesh collo pts " << mesh_rec_->num_collocation_points() 
+    << std::endl;
     ker_obj_ = std::make_shared<
         BieElastostatic<src_elem, rec_elem, ElasticKernelType::T>>(
         elas, spatial_dimension_);

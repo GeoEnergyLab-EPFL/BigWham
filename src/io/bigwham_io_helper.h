@@ -35,9 +35,12 @@ std::shared_ptr<Mesh> createMeshFromVect(int spatial_dimension,
                                          const std::vector<double> &coor,
                                          const std::vector<int> &conn) {
   il::int_t npoints = coor.size() / spatial_dimension;
-  il::int_t nelts = conn.size() / spatial_dimension;
+  il::int_t nelts = conn.size() / n_vertex_elt;
   il::Array2D<double> Coor{npoints, spatial_dimension, 0.}; //
   il::Array2D<il::int_t> Conn{nelts, n_vertex_elt, 0};
+  // std::cout << "in create mesh - start "
+  //           << "\n";
+  // std::cout << "n elems" << nelts << "\n";
   // populate mesh  ...
   int index = 0;
   for (il::int_t i = 0; i < Coor.size(0); i++) {
@@ -68,7 +71,7 @@ std::unique_ptr<Mesh> CreateUniqueMeshFromVect(int spatial_dimension,
                                          const std::vector<double> &coor,
                                          const std::vector<int> &conn) {
   il::int_t npoints = coor.size() / spatial_dimension;
-  il::int_t nelts = conn.size() / spatial_dimension;
+  il::int_t nelts = conn.size() / n_vertex_elt;
   il::Array2D<double> Coor{npoints, spatial_dimension, 0.}; //
   il::Array2D<il::int_t> Conn{nelts, n_vertex_elt, 0};
   // populate mesh  ...

@@ -242,7 +242,7 @@ add_subdirectory(src/examples)
 ################################################################################
 # For BigWham Documentation
 ################################################################################
-message(STATUS "Building documentation: ${BIGWHAM_DOCUMENTATION}")
-if(BIGWHAM_DOCUMENTATION)
-  add_subdirectory(docs)
-endif()
+# message(STATUS "Building documentation: ${BIGWHAM_DOCUMENTATION}")
+# if(BIGWHAM_DOCUMENTATION)
+#   add_subdirectory(docs)
+# endif()

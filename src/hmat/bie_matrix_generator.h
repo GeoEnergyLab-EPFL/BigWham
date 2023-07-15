@@ -60,6 +60,8 @@ inline BieMatrixGenerator<T>::BieMatrixGenerator(
   block_size_ = this->bie_kernel_->dof_dimension();
   size0_ = num_row_points_ * block_size_;
   size1_ = num_col_points_ * block_size_;
+  // std::cout << "BieMatrixGenerator: shape = " << size0_  
+  // << " X  " << size1_ << std::endl;
 }
 
 template <typename T>
