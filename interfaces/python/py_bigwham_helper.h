@@ -119,9 +119,9 @@ void declare_array(py::module &m, const std::string &typestr) {
 /*
 dim : dimension of the problem
 pts : (observation points - source points) flattened
-elem_kernel_type : element type and kernel type, for example "2DS0-H"
-H : stress due to DD
-T : stress due to point force
+elem_kernel_type : element type and kernel type, for example "2DS0-S"
+V : stress due to DD
+S : stress due to point force
 */
 pbarray<double> PyComputeStress(const pbarray<double> &pts,
                                 const std::string &elem_kernel_type,
@@ -130,7 +130,7 @@ pbarray<double> PyComputeStress(const pbarray<double> &pts,
 
   il::Array<double> stress;
   switch (hash_djb2a(elem_kernel_type)) {
-  case "2DS0-T"_sh: {
+  case "2DS0-S"_sh: {
     int dim = 2;
     int num_pts = pts.size() / dim;
     stress.Resize(num_pts * dim * 3);
@@ -152,7 +152,7 @@ pbarray<double> PyComputeStress(const pbarray<double> &pts,
     }
     break;
   }
-  case "2DS0-H"_sh: {
+  case "2DS0-V"_sh: {
     int dim = 2;
     int num_pts = pts.size() / dim;
     stress.Resize(num_pts * dim * 3);

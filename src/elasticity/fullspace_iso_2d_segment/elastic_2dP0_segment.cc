@@ -7,6 +7,8 @@
 // file for more details.
 //
 
+#include <iostream>
+
 #include <il/Array2D.h>
 #include <il/math.h>
 
@@ -77,6 +79,10 @@ il::StaticArray2D<double, 2, 3> Se_segment_0(double h, double G, double nu,
   // for a unit segment [-1,1]
   double x2 = y1_o * overhalfh; // change of variable to perform the computation
   // for a unit segment [-1,1]
+  // if (x2 == 0.) {
+  //   x2 -= 1e-5;
+  // }
+
   double x1_2 = x1 * x1;
   double x2_2 = x2 * x2;
   // coef
@@ -91,10 +97,20 @@ il::StaticArray2D<double, 2, 3> Se_segment_0(double h, double G, double nu,
   // Se_111, Se_121, Se_221
   // Se_112,Se_122, Se_222
   // in-plane case
-  if (x2 == 0.) {
+  // check Eq. 5.2.8 Crouch Starfield BEM book
+  // (Dx / 2) * h
+  if (il::abs(x2) <= 1e-7) {
     // by convention we take the limit from-below !
-    Se(0, 1) = 0.5;
-    Se(1, 2) = 0.5;
+    if (il::abs(x1) <= 1.0) {
+      Se(0, 1) = 0.5 * overhalfh;
+      Se(1, 2) = 0.5 * overhalfh;
+    } else {
+      double tmpfac = beta_s * (1 - 2 * nu) *
+        log(il::abs((x1 - 1) / (x1 + 1)));
+      Se(0, 2) = -tmpfac;
+      Se(1, 1) = tmpfac;
+    }
+    // std::cout << "Dont come here \n" << std::endl;
   } else {
 
     double aux22 = pow(1 + x2_2, 2);

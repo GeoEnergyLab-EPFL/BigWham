@@ -102,16 +102,21 @@ BieElastostatic<Segment<0>, Segment<0>, ElasticKernelType::T>::influence(
 
   double h = source_elt.size();
 
+  // calculate Sijk: stress_ij due to point force in k direction
+  // in source coordinate system
   il::StaticArray2D<double, 2, 3> stress_l =
       Se_segment_0(h, this->elas_.shear_modulus(), this->elas_.poisson_ratio(),
                    xe[0], xe[1]);
 
   il::Array2D<double> stress_shear{2, 2, 0.}, stress_norm{2, 2, 0.};
+
+  // k = 0
   stress_shear(0, 0) = stress_l(0, 0);
   stress_shear(0, 1) = stress_l(0, 1);
   stress_shear(1, 1) = stress_l(0, 2);
   stress_shear(1, 0) = stress_shear(0, 1);
 
+  // k = 1
   stress_norm(0, 0) = stress_l(1, 0);
   stress_norm(0, 1) = stress_l(1, 1);
   stress_norm(1, 1) = stress_l(1, 2);
@@ -121,31 +126,32 @@ BieElastostatic<Segment<0>, Segment<0>, ElasticKernelType::T>::influence(
   auto n = source_elt.ConvertToLocal(receiver_elt.normal());
 
   //  in the coord sys of the source elt
+  // k = 0
   auto tt_s = il::dot(stress_shear, n);
+  // k = 1
   auto tt_n = il::dot(stress_norm, n);
 
   // in local coord sys of the receiver element
+  // k = 0
   auto tt_s_local =
       receiver_elt.ConvertToLocal(source_elt.ConvertToGlobal(tt_s));
+  // k = 1
   auto tt_n_local =
       receiver_elt.ConvertToLocal(source_elt.ConvertToGlobal(tt_n));
 
   std::vector<double> stnl(4, 0.);
 
+  // in fortran col major format
   // shear stress in the receiver coor sys.
-  //  effect of shear
-  //        St(0, 0)
+  // Tik : i = 0 (rec), k = 0 (src)
   stnl[0] = tt_s_local[0];
-  //  effect of normal
-  // St(0, 1)
-  stnl[2] = tt_n_local[0];
+  // Tik : i = 1 (rec), k = 0 (src)
+  stnl[1] = tt_s_local[1];
 
   // normal stress in the receiver coor sys.
-  //  effect of shear
-  // St(1, 0)
-  stnl[1] = tt_s_local[1];
-  //  effect of normal
-  // St(1, 1)
+  // Tik : i = 0 (rec), k = 1 (src)
+  stnl[2] = tt_n_local[0];
+  // Tik : i = 1 (rec), k = 1 (src)
   stnl[3] = tt_n_local[1];
 
   return stnl;
@@ -216,6 +222,89 @@ BieElastostatic<Segment<0>, Segment<0>, ElasticKernelType::H>::influence(
 
   return stnl;
 }
+/* -------------------------------------------------------------------------- */
+
+// // Singular Kernel   T : Rectangular Kernel
+// // Displacement at rec due to displacment discontnuity at src, delta(src)
+// //                               and normal at src, n(src)
+// template <>
+// std::vector<double>
+// BieElastostatic<Segment<0>, Segment<0>, ElasticKernelType::T>::influence(
+//     const BoundaryElement &source_elt, il::int_t i_s,
+//     const BoundaryElement &receiver_elt, il::int_t i_r) const {
+
+//   /*
+//    Traction due to point force at src, f(src)
+//    t(rec) = S(src, rec) x n(rec) x f(src) 
+//    T(src, rec) =  S(src, rec) x n(rec) 
+
+//    Displacement due to displacment discontnuity at src, delta(src)
+//                                and normal at src, n(src)
+//    u(rec) = - S (rec, src) x n(src) x delta(src)
+//    T(src, rec) =  - S(rec, src) x n(src) 
+//   */
+
+//   il::Array<double> xe{2, 0.0};
+//   auto Xmid = source_elt.centroid();
+//   auto r_col = receiver_elt.collocation_points();
+
+//   // xe = rec - src
+//   for (int i = 0; i < 2; ++i) {
+//     xe[i] = r_col(i_r, i) - Xmid[i];
+//   }
+//   xe = source_elt.ConvertToLocal(xe);
+
+//   double h = source_elt.size();
+
+
+//   // The below method will give us S(rec - src) 
+//   // but we need S(src - rec), therefore -xe is taken in input 
+//   il::StaticArray2D<double, 2, 3> stress_l =
+//       Se_segment_0(h, this->elas_.shear_modulus(), this->elas_.poisson_ratio(),
+//                     -xe[0], -xe[1]); /*  careful about (-) sign */
+
+//   // Further we need - S(src - rec) /* see the sign */
+//   il::Array2D<double> stress_shear{2, 2, 0.}, stress_norm{2, 2, 0.};
+//   stress_shear(0, 0) = -stress_l(0, 0); /* careful about (-) sign */
+//   stress_shear(0, 1) = -stress_l(0, 1);
+//   stress_shear(1, 1) = -stress_l(0, 2);
+//   stress_shear(1, 0) = stress_shear(0, 1);
+
+//   stress_norm(0, 0) = -stress_l(1, 0); /* careful about (-) sign */
+//   stress_norm(0, 1) = -stress_l(1, 1);
+//   stress_norm(1, 1) = -stress_l(1, 2);
+//   stress_norm(1, 0) = stress_norm(0, 1);
+
+//   // source norrmal vector in local
+//   auto n = source_elt.ConvertToLocal(source_elt.normal());
+
+//   //  in the local coord sys of the source elt
+//   auto tt_s = il::dot(stress_shear, n);
+//   auto tt_n = il::dot(stress_norm, n);
+
+//   // in local coord sys of the receiver element
+//   auto tt_s_local =
+//       receiver_elt.ConvertToLocal(source_elt.ConvertToGlobal(tt_s));
+//   auto tt_n_local =
+//       receiver_elt.ConvertToLocal(source_elt.ConvertToGlobal(tt_n));
+
+//   std::vector<double> stnl(4, 0.);
+
+//   // St(0, 0)
+//   // rec displacement in 0 direction due to DD in 0 direction (ModeII)
+//   stnl[0] = tt_s_local[0];
+//   // St(0, 1)
+//   // rec displacement in 0 direction due to DD in 1 direction (ModeI)
+//   stnl[2] = tt_n_local[0];
+//   // St(1, 0)
+//   // rec displacement in 1 direction due to DD in 0 direction (ModeII)
+//   stnl[1] = tt_s_local[1];
+//   // St(1, 1)
+//   // rec displacement in 1 direction due to DD in 1 direction (ModeI)
+//   stnl[3] = tt_n_local[1];
+
+//   return stnl;
+// }
 /* -------------------------------------------------------------------------- */
 
 // Singular Kernel   T : Rectangular Kernel
