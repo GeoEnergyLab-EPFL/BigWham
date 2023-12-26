@@ -16,7 +16,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.2">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.3">
     
     
       
@@ -249,7 +249,7 @@
             
   
   <span class="md-ellipsis">
-    API
+    Developers
   </span>
   
 
@@ -259,7 +259,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
-            API
+            Developers
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -274,7 +274,7 @@
         
   
   <span class="md-ellipsis">
-    Api
+    Developers API
   </span>
   
 
@@ -787,14 +787,14 @@
 </li>
 </ul>
 <h2 id="making-python-venv">making python venv</h2>
-<pre><code>$sudo apt install python3-venv 
+<div class="highlight"><pre><span></span><code>$sudo apt install python3-venv 
 
 $python3 –m venv bigwham_venv 
 
 $source bigwham_venv/bin/activate 
 
 $pip install jupyter scipy matplotlib numpy jupyterlab 
-</code></pre>
+</code></pre></div>
 <h2 id="compile">Compile</h2>
 <ul>
 <li>
@@ -803,11 +803,11 @@ $pip install jupyter scipy matplotlib numpy jupyterlab
 </li>
 <li>
 <p>compile command assuming <code>${PROJECT_ROOR}/bigwham_venv</code> is python virtual env
-  run the following from project_root</p>
+  run the following from project_root
+<div class="highlight"><pre><span></span><code>source bigwham_venv/bin/activate;. /opt/intel/mkl/bin/mklvars.sh intel64; cd build; cmake -DPYENV_ROOT=${PWD}/bigwham_venv -DMATHEMATICA_INTERFACE=1 -DCMAKE_CXX_COMPILER=g++ -DBUILD_GOOGLE_TESTS=1 -DBUILD_PYTHON_BINDINGS=0 -DUSE_INTEL=0 -DIL_OPENMP=1 -DIL_OPENBLAS=0 -DIL_MKL=1  ..; make -j2; cd ..
+</code></pre></div></p>
 </li>
 </ul>
-<pre><code>source bigwham_venv/bin/activate;. /opt/intel/mkl/bin/mklvars.sh intel64; cd build; cmake -DPYENV_ROOT=${PWD}/bigwham_venv -DMATHEMATICA_INTERFACE=1 -DCMAKE_CXX_COMPILER=g++ -DBUILD_GOOGLE_TESTS=1 -DBUILD_PYTHON_BINDINGS=0 -DUSE_INTEL=0 -DIL_OPENMP=1 -DIL_OPENBLAS=0 -DIL_MKL=1  ..; make -j2; cd ..
-</code></pre>
 <h2 id="testing">Testing</h2>
 <p>-<code>./build/BigWhamElastUnitTest</code>
 - <code>python interfaces/python/_test/pybinding_checks.py</code> # inside virthual env</p>

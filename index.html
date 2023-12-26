@@ -16,7 +16,7 @@
       
       
       <link rel="icon" href="assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.2">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.3">
     
     
       
@@ -340,7 +340,7 @@
             
   
   <span class="md-ellipsis">
-    API
+    Developers
   </span>
   
 
@@ -350,7 +350,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
-            API
+            Developers
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -365,7 +365,7 @@
         
   
   <span class="md-ellipsis">
-    Api
+    Developers API
   </span>
   
 
@@ -694,10 +694,10 @@
 <hr />
 <h2 id="source-code">Source code</h2>
 <p>Clone and change to <a href="https://github.com/GeoEnergyLab-EPFL/BigWham/tree/Brice/dev">Brice/dev</a></p>
-<pre><code class="language-bash"># Use Python &lt; 3.10, GCC &lt; 12
+<div class="highlight"><pre><span></span><code><span class="c1"># Use Python &lt; 3.10, GCC &lt; 12</span>
 
-git clone -b Brice/dev git@github.com:GeoEnergyLab-EPFL/BigWham.git
-</code></pre>
+git<span class="w"> </span>clone<span class="w"> </span>-b<span class="w"> </span>Brice/dev<span class="w"> </span>git@github.com:GeoEnergyLab-EPFL/BigWham.git
+</code></pre></div>
 <h2 id="installation">Installation</h2>
 <ul>
 <li><a href="installation/ubuntu/">Ubuntu</a></li>
@@ -708,19 +708,17 @@ git clone -b Brice/dev git@github.com:GeoEnergyLab-EPFL/BigWham.git
 </ul>
 <h2 id="documentation-generation">Documentation Generation</h2>
 <ul>
-<li>We are using <a href="https://www.mkdocs.org/">mkdocs</a> to generate the documentation. We use specifically the <a href="https://squidfunk.github.io/mkdocs-material/">material theme</a>. You can install the dependencies with the following command:</li>
-</ul>
-<pre><code class="language-bash">pip install mkdocs mkdocs-material
-</code></pre>
-<ul>
+<li>We are using <a href="https://www.mkdocs.org/">mkdocs</a> to generate the documentation. We use specifically the <a href="https://squidfunk.github.io/mkdocs-material/">material theme</a>. You can install the dependencies with the following command:
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>mkdocs<span class="w"> </span>mkdocs-material
+</code></pre></div></li>
 <li>You need to edit <code>mkdocs.yml</code> to add new pages.</li>
-<li>To make changes in documentation, edit the markdown files in the <code>docs</code> folder. To generate the documentation, run the following commands:</li>
+<li>To make changes in documentation, edit the markdown files in the <code>docs</code> folder. To generate the documentation, run the following commands:
+<div class="highlight"><pre><span></span><code><span class="c1"># to serve locally (required for testing)</span>
+mkdocs<span class="w"> </span>serve
+<span class="c1"># to publish using github pages</span>
+mkdocs<span class="w"> </span>gh-deploy
+</code></pre></div></li>
 </ul>
-<pre><code class="language-bash"># to serve locally (required for testing)
-mkdocs serve
-# to publish using github pages
-mkdocs gh-deploy
-</code></pre>
 <h3 id="testing">Testing</h3>
 <p>I am testing <a href="https://squidfunk.github.io/mkdocs-material/reference/math/?h=tex#katex">katex</a> here <span class="arithmatex">\(\mathbf{G}\)</span></p>
 <div class="arithmatex">\[

@@ -18,7 +18,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.2">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.3">
     
     
       
@@ -251,7 +251,7 @@
             
   
   <span class="md-ellipsis">
-    API
+    Developers
   </span>
   
 
@@ -261,7 +261,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
-            API
+            Developers
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -276,7 +276,7 @@
         
   
   <span class="md-ellipsis">
-    Api
+    Developers API
   </span>
   
 
@@ -630,116 +630,115 @@
 
 <h1 id="2d-griffith-crack">2D Griffith crack</h1>
 <h2 id="2dp1-kernel">2DP1 kernel</h2>
-<pre><code class="language-python"># %%
-import sys
-import os
-home = os.environ[&quot;HOME&quot;]
-sys.path.append(home + &quot;/geolab/dev_bigwham/build/interfaces/python&quot;)
-from hmatrix import Hmatrix
-import numpy as np
-from scipy.sparse.linalg import gmres
+<div class="highlight"><pre><span></span><code><span class="c1"># %%</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="n">home</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;HOME&quot;</span><span class="p">]</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">home</span> <span class="o">+</span> <span class="s2">&quot;/geolab/dev_bigwham/build/interfaces/python&quot;</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">hmatrix</span> <span class="kn">import</span> <span class="n">Hmatrix</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.sparse.linalg</span> <span class="kn">import</span> <span class="n">gmres</span>
 
-# %% Material properties
-G = 1.0
-nu = 0.25
-E = (2 * G) * (1 + nu)
+<span class="c1"># %% Material properties</span>
+<span class="n">G</span> <span class="o">=</span> <span class="mf">1.0</span>
+<span class="n">nu</span> <span class="o">=</span> <span class="mf">0.25</span>
+<span class="n">E</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">G</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">nu</span><span class="p">)</span>
 
-# %% Mesh
-a = 10
-nelts = 100
-coor1D = np.linspace(-a, a, nelts + 1)
-coor = np.transpose(np.array([coor1D, coor1D * 0.0]))
-conn = np.fromfunction(lambda i, j: i + j, (nelts, 2), dtype=np.int_)
+<span class="c1"># %% Mesh</span>
+<span class="n">a</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">nelts</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">coor1D</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="n">a</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">nelts</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">coor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">coor1D</span><span class="p">,</span> <span class="n">coor1D</span> <span class="o">*</span> <span class="mf">0.0</span><span class="p">]))</span>
+<span class="n">conn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfunction</span><span class="p">(</span><span class="k">lambda</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">:</span> <span class="n">i</span> <span class="o">+</span> <span class="n">j</span><span class="p">,</span> <span class="p">(</span><span class="n">nelts</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int_</span><span class="p">)</span>
 
-# H-matrix parameter
-max_leaf_size=100
-eta=3.
-eps_aca=1.e-4
+<span class="c1"># H-matrix parameter</span>
+<span class="n">max_leaf_size</span><span class="o">=</span><span class="mi">100</span>
+<span class="n">eta</span><span class="o">=</span><span class="mf">3.</span>
+<span class="n">eps_aca</span><span class="o">=</span><span class="mf">1.e-4</span>
 
-# %%
-# Hmatrix
-kernel = &quot;2DP1&quot;
-elas_prop = np.array([E, nu])
-h = Hmatrix(kernel, coor, conn, elas_prop, max_leaf_size, eta, eps_aca)
+<span class="c1"># %%</span>
+<span class="c1"># Hmatrix</span>
+<span class="n">kernel</span> <span class="o">=</span> <span class="s2">&quot;2DP1&quot;</span>
+<span class="n">elas_prop</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">E</span><span class="p">,</span> <span class="n">nu</span><span class="p">])</span>
+<span class="n">h</span> <span class="o">=</span> <span class="n">Hmatrix</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="n">coor</span><span class="p">,</span> <span class="n">conn</span><span class="p">,</span> <span class="n">elas_prop</span><span class="p">,</span> <span class="n">max_leaf_size</span><span class="p">,</span> <span class="n">eta</span><span class="p">,</span> <span class="n">eps_aca</span><span class="p">)</span>
 
-# get augemented collocation points
-col_pts_aug = np.zeros((conn.shape[0] * 2, conn.shape[1]))
-c = 0
-col_pts_aug[c, :] = coor[0, :]
-c += 1
-for i in range(1, coor.shape[0] -  1):
-    col_pts_aug[c, :] = coor[i, :]
-    c += 1
-    col_pts_aug[c, :] = coor[i, :]
-    c += 1
-col_pts_aug[c, :] = coor[i+1, :]
+<span class="c1"># get augemented collocation points</span>
+<span class="n">col_pts_aug</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">conn</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="n">conn</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+<span class="n">c</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">col_pts_aug</span><span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">coor</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span>
+<span class="n">c</span> <span class="o">+=</span> <span class="mi">1</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">coor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span>  <span class="mi">1</span><span class="p">):</span>
+    <span class="n">col_pts_aug</span><span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">coor</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="n">c</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">col_pts_aug</span><span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">coor</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="n">c</span> <span class="o">+=</span> <span class="mi">1</span>
+<span class="n">col_pts_aug</span><span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">coor</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
 
-# %%
-col_pts = h.getMeshCollocationPoints()
+<span class="c1"># %%</span>
+<span class="n">col_pts</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">getMeshCollocationPoints</span><span class="p">()</span>
 
-# %%
-t = np.ones(h.shape[0])
-t[0::2] = 0.
-d = gmres(h, t, tol=1e-6)[0]
+<span class="c1"># %%</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+<span class="n">d</span> <span class="o">=</span> <span class="n">gmres</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
-dd = d.reshape((-1, 2))
-# %%
+<span class="n">dd</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="c1"># %%</span>
 
-import matplotlib.pyplot as plt
-plt.plot(col_pts_aug[:, 0], dd, &quot;-*&quot;)
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">col_pts_aug</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">dd</span><span class="p">,</span> <span class="s2">&quot;-*&quot;</span><span class="p">)</span>
 
-# %%
-
-</code></pre>
+<span class="c1"># %%</span>
+</code></pre></div>
 <h2 id="2dp0-kernel">2DP0 kernel</h2>
-<pre><code class="language-python"># %%
-import sys
-import os
-home = os.environ[&quot;HOME&quot;]
-sys.path.append(home + &quot;/geolab/dev_bigwham/build/interfaces/python&quot;)
-from hmatrix import Hmatrix
-import numpy as np
-from scipy.sparse.linalg import gmres
+<div class="highlight"><pre><span></span><code><span class="c1"># %%</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="n">home</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;HOME&quot;</span><span class="p">]</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">home</span> <span class="o">+</span> <span class="s2">&quot;/geolab/dev_bigwham/build/interfaces/python&quot;</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">hmatrix</span> <span class="kn">import</span> <span class="n">Hmatrix</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.sparse.linalg</span> <span class="kn">import</span> <span class="n">gmres</span>
 
-# %% Material properties
-G = 1.0
-nu = 0.25
-E = (2 * G) * (1 + nu)
+<span class="c1"># %% Material properties</span>
+<span class="n">G</span> <span class="o">=</span> <span class="mf">1.0</span>
+<span class="n">nu</span> <span class="o">=</span> <span class="mf">0.25</span>
+<span class="n">E</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">G</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">nu</span><span class="p">)</span>
 
-# %% Mesh
-a = 10
-nelts = 100
-coor1D = np.linspace(-a, a, nelts + 1)
-coor = np.transpose(np.array([coor1D, coor1D * 0.0]))
-conn = np.fromfunction(lambda i, j: i + j, (nelts, 2), dtype=np.int_)
+<span class="c1"># %% Mesh</span>
+<span class="n">a</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">nelts</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">coor1D</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="n">a</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">nelts</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">coor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">coor1D</span><span class="p">,</span> <span class="n">coor1D</span> <span class="o">*</span> <span class="mf">0.0</span><span class="p">]))</span>
+<span class="n">conn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfunction</span><span class="p">(</span><span class="k">lambda</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">:</span> <span class="n">i</span> <span class="o">+</span> <span class="n">j</span><span class="p">,</span> <span class="p">(</span><span class="n">nelts</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int_</span><span class="p">)</span>
 
-# H-matrix parameter
-max_leaf_size=100
-eta=3.
-eps_aca=1.e-4
+<span class="c1"># H-matrix parameter</span>
+<span class="n">max_leaf_size</span><span class="o">=</span><span class="mi">100</span>
+<span class="n">eta</span><span class="o">=</span><span class="mf">3.</span>
+<span class="n">eps_aca</span><span class="o">=</span><span class="mf">1.e-4</span>
 
-# %%
-# Hmatrix
-kernel = &quot;2DP0&quot;
-elas_prop = np.array([E, nu])
-h = Hmatrix(kernel, coor, conn, elas_prop, max_leaf_size, eta, eps_aca)
+<span class="c1"># %%</span>
+<span class="c1"># Hmatrix</span>
+<span class="n">kernel</span> <span class="o">=</span> <span class="s2">&quot;2DP0&quot;</span>
+<span class="n">elas_prop</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">E</span><span class="p">,</span> <span class="n">nu</span><span class="p">])</span>
+<span class="n">h</span> <span class="o">=</span> <span class="n">Hmatrix</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="n">coor</span><span class="p">,</span> <span class="n">conn</span><span class="p">,</span> <span class="n">elas_prop</span><span class="p">,</span> <span class="n">max_leaf_size</span><span class="p">,</span> <span class="n">eta</span><span class="p">,</span> <span class="n">eps_aca</span><span class="p">)</span>
 
-# %%
-col_pts = h.getMeshCollocationPoints()
+<span class="c1"># %%</span>
+<span class="n">col_pts</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">getMeshCollocationPoints</span><span class="p">()</span>
 
-# %%
-t = np.ones(h.shape[0])
-t[0::2] = 0.
-d = gmres(h, t, tol=1e-6)[0]
+<span class="c1"># %%</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+<span class="n">d</span> <span class="o">=</span> <span class="n">gmres</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
-dd = d.reshape((-1, 2))
-# %%
+<span class="n">dd</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="c1"># %%</span>
 
-import matplotlib.pyplot as plt
-plt.plot(col_pts[:, 0], dd, &quot;-*&quot;)
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">col_pts</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">dd</span><span class="p">,</span> <span class="s2">&quot;-*&quot;</span><span class="p">)</span>
 
-# %%
-</code></pre>
+<span class="c1"># %%</span>
+</code></pre></div>
 
 
 
