@@ -2,37 +2,42 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://bigwham.com/</loc>
-         <lastmod>2023-12-26</lastmod>
+         <lastmod>2023-12-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://bigwham.com/about/</loc>
-         <lastmod>2023-12-26</lastmod>
+         <lastmod>2023-12-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://bigwham.com/api/api/</loc>
-         <lastmod>2023-12-26</lastmod>
+         <lastmod>2023-12-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://bigwham.com/examples/griffith_crack/</loc>
-         <lastmod>2023-12-26</lastmod>
+         <lastmod>2023-12-28</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://bigwham.com/examples/user_api/</loc>
+         <lastmod>2023-12-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://bigwham.com/installation/ubuntu/</loc>
-         <lastmod>2023-12-26</lastmod>
+         <lastmod>2023-12-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://bigwham.com/oldies/readmev1/</loc>
-         <lastmod>2023-12-26</lastmod>
+         <lastmod>2023-12-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://bigwham.com/oldies/readmev2/</loc>
-         <lastmod>2023-12-26</lastmod>
+         <lastmod>2023-12-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
 </urlset>
