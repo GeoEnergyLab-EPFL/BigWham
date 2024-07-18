@@ -8,7 +8,7 @@
       
       
       
-        <link rel="canonical" href="https://bigwham.com/api/api/">
+        <link rel="canonical" href="https://bigwham.com/misc/helper/">
       
       
       
@@ -18,7 +18,7 @@
     
     
       
-        <title>Developers API - BigWham</title>
+        <title>Helper - BigWham</title>
       
     
     
@@ -62,7 +62,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#boundary-element" class="md-skip">
+        <a href="#documentation-generation" class="md-skip">
           Skip to content
         </a>
       
@@ -96,7 +96,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Developers API
+              Helper
             
           </span>
         </div>
@@ -505,47 +505,26 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#boundary-element" class="md-nav__link">
+  <a href="#documentation-generation" class="md-nav__link">
     <span class="md-ellipsis">
-      Boundary Element
+      Documentation Generation
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Documentation Generation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      Testing
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#mesh" class="md-nav__link">
-    <span class="md-ellipsis">
-      Mesh
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#kernel" class="md-nav__link">
-    <span class="md-ellipsis">
-      Kernel
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#hmatix" class="md-nav__link">
-    <span class="md-ellipsis">
-      Hmatix
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#io" class="md-nav__link">
-    <span class="md-ellipsis">
-      IO
-    </span>
-  </a>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -567,41 +546,32 @@
   
 
 
-  <h1>Developers API</h1>
+  <h1>Helper</h1>
 
-<p>We are using <a href="https://mermaid.js.org/syntax/classDiagram.html">mermaid charts</a> here.</p>
-<h2 id="boundary-element">Boundary Element</h2>
-<pre class="mermaid"><code>---
-title: BigWham API
----
-classDiagram
-    class BoundaryElement~int dim, int nvert, int p~{
-        +get_collocation_points()
-    }
-    class Segment{
-    }
-    class Triangle{
-    }
-    class Polygon{
-    }
-    BoundaryElement &lt;|-- Segment
-    BoundaryElement &lt;|-- Polygon
-    Polygon &lt;|-- Triangle
-    Polygon &lt;|-- Rectangle
-</code></pre>
-<h2 id="mesh">Mesh</h2>
-<h2 id="kernel">Kernel</h2>
-<h2 id="hmatix">Hmatix</h2>
-<h2 id="io">IO</h2>
+<h2 id="documentation-generation">Documentation Generation</h2>
+<ul>
+<li>We are using <a href="https://www.mkdocs.org/">mkdocs</a> to generate the documentation. We use specifically the <a href="https://squidfunk.github.io/mkdocs-material/">material theme</a>. You can install the dependencies with the following command:
+<div class="highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-0-1">pip<span class="w"> </span>install<span class="w"> </span>mkdocs<span class="w"> </span>mkdocs-material
+</span></code></pre></div></li>
+<li>You need to edit <code>mkdocs.yml</code> to add new pages.</li>
+<li>To make changes in documentation, edit the markdown files in the <code>docs</code> folder. To generate the documentation, run the following commands:
+<div class="highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-1-1"><span class="c1"># to serve locally (required for testing)</span>
+</span><span id="__span-1-2">mkdocs<span class="w"> </span>serve
+</span><span id="__span-1-3"><span class="c1"># to publish using github pages</span>
+</span><span id="__span-1-4">mkdocs<span class="w"> </span>gh-deploy
+</span></code></pre></div></li>
+</ul>
+<h3 id="testing">Testing</h3>
+<p>I am testing <a href="https://squidfunk.github.io/mkdocs-material/reference/math/?h=tex#katex">katex</a> here <span class="arithmatex">\(\mathbf{G}\)</span></p>
+<div class="arithmatex">\[
+\mathbf{t}(\bf{x}) - \mathbf{t}_0(\bf{x}) = \int_S \mathbf{H}(\bf{x} - \bf{y}) \cdot \mathbf{u}(\bf{y}) \, d\bf{y}
+\]</div>
 
 
 
 
 
 
-
-  
-  
 
 
 
