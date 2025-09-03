@@ -12,4 +12,5 @@ compile_commands.json
 /build_debug/
 /site/*
 cmake/
+cmake*
 .dir-locals.el

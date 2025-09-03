@@ -43,7 +43,7 @@ function(download_external_project project_name)
   set(_working_dir ${PROJECT_BINARY_DIR}/third-party/${project_name}-download)
   file(WRITE ${_working_dir}/CMakeLists.txt
     "
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.5)
 project(${project_name}-download NONE)
 include(ExternalProject)
 ExternalProject_Add(${project_name}

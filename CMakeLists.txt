@@ -9,7 +9,7 @@ if(CMAKE_VERSION VERSION_LESS 3.12)
 endif()
 
 project(BigWham VERSION 1.0
-        DESCRIPTION "This is the library containing the wheels"
+        DESCRIPTION "This is the library containing bigwham"
         LANGUAGES CXX)
 
 # This is only for pybind11 to behave properly
@@ -158,7 +158,8 @@ if(BIGWHAM_PYTHON_INTERFACE)
     message(STATUS "Python Version: ${Python3_VERSION}")
     message(STATUS "Python Include Dir: ${Python3_INCLUDE_DIRS}")
     set(PYBIND11_PYTHON_VERSION 3)
-    add_external_package(pybind11 VERSION 2.8.0 CONFIG)
+#    add_external_package(pybind11 VERSION 2.8.0 CONFIG)
+    add_external_package(pybind11 VERSION 2.13.6 CONFIG)
     add_subdirectory(interfaces/python)
 endif()
 
